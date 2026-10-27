@@ -2,7 +2,7 @@ name: Verileri güncelle
 
 on:
   schedule:
-    - cron: "17 */4 * * *"   # her 4 saatte bir (UTC)
+    - cron: "17 * * * *"      # her saat (UTC)
   workflow_dispatch:          # Actions sekmesinden elle çalıştırmak için
   push:
     branches: [main]
@@ -30,6 +30,8 @@ jobs:
           restore-keys: veri-
 
       - name: Veriyi indir ve dönüştür
+        env:
+          FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
         run: |
           mkdir -p _site
           python3 guncelle.py --onbellek onbellek --cikti _site/veri.json
