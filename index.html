@@ -110,7 +110,7 @@ tr.sig td:first-child { box-shadow: inset 3px 0 0 var(--signal); }
 .ayar-ozet { margin: 0; font-size: 13px; color: var(--muted); }
 .ayar-ozet b { color: var(--ink); font-weight: 600; }
 .form label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-.form select { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; min-width: 0; }
+.form select, .form input { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; min-width: 0; }
 section.bt { display: grid; gap: 12px; }
 .bt .lead { max-width: 75ch; margin: 0; }
 .bt table td.good { color: var(--hit); font-weight: 600; }
@@ -149,6 +149,10 @@ section.bt { display: grid; gap: 12px; }
         <select id="a-min"><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
       <label for="a-esik">Sinyal eşiği
         <select id="a-esik"><option value="1">%100 (hepsi tuttu)</option><option value="0.9">%90</option><option value="0.8">%80</option></select></label>
+      <label for="a-gecmis">Kullanılacak geçmiş maçlar
+        <select id="a-gecmis"><option value="tum">Tümü (2023'ten beri)</option><option value="sezon">Bu sezon</option><option value="2sezon">Son 2 sezon</option><option value="12ay">Son 12 ay</option><option value="6ay">Son 6 ay</option><option value="ozel">Seçtiğim tarihten itibaren</option></select></label>
+      <label for="a-gbas">Başlangıç tarihi
+        <input type="date" id="a-gbas"></label>
     </div>
     <p class="ayar-ozet" id="ayar-ozet"></p>
   </section>
@@ -301,7 +305,11 @@ section.bt { display: grid; gap: 12px; }
       ONEK[lk] = { n, h };
     }
   }
-  function ligOrt(lk, bitis, k) { const o = ONEK[lk]; if (!o) return null; const n = o.n[bitis * P + k]; return n ? o.h[bitis * P + k] / n : null; }
+  function ligOrt(lk, bas, bitis, k) {
+    const o = ONEK[lk]; if (!o) return null;
+    const n = o.n[bitis * P + k] - o.n[bas * P + k];
+    return n ? (o.h[bitis * P + k] - o.h[bas * P + k]) / n : null;
+  }
   const ONCUL = 8; // az veride tahmini lig ortalamasına çeken ağırlık
 
   // ---------------------------------------------------------------- analiz
@@ -312,9 +320,9 @@ section.bt { display: grid; gap: 12px; }
     if (t.pu != null) { if (c.pu == null) return -1; const du = Math.abs(t.pu - c.pu); if (du > tol) return -1; d = Math.max(d, du); }
     return d;
   }
-  function analiz(t, liste, bitis, A) {
+  function analiz(t, liste, bitis, A, bas) {
     const yakin = [], genis = [], tol = A.tol, tol2 = A.tol * 2;
-    for (let i = 0; i < bitis; i++) {
+    for (let i = bas || 0; i < bitis; i++) {
       const c = liste[i]; const d = mesafe(t, c, tol2);
       if (d < 0) continue;
       genis.push(c); if (d <= tol) yakin.push([d, c]);
@@ -326,7 +334,7 @@ section.bt { display: grid; gap: 12px; }
     const pazar = PAZARLAR.map((pz, k) => {
       let n = 0, h = 0; for (const c of benzer) { const s = sonucu(pz, c); if (s != null) { n++; h += s; } }
       let gn = 0, gh = 0; for (const c of dis) { const s = sonucu(pz, c); if (s != null) { gn++; gh += s; } }
-      const tn = n + gn, lo = ligOrt(t.lig, bitis, k);
+      const tn = n + gn, lo = ligOrt(t.lig, bas || 0, bitis, k);
       const tah = lo == null ? (tn ? (h + gh) / tn : null) : (h + gh + ONCUL * lo) / (tn + ONCUL);
       return { kod: pz[0], n, h, normal: gn ? gh / gn : null, ng: gn, tah, tn, lo,
         sinyal: n >= A.min && n > 0 && h / n >= A.esik - 1e-9 };
@@ -336,19 +344,19 @@ section.bt { display: grid; gap: 12px; }
   function bitisBul(l, gun) { let lo = 0, hi = l.length; while (lo < hi) { const md = (lo + hi) >> 1; if (l[md].gun < gun) lo = md + 1; else hi = md; } return lo; }
 
   function backtest(A) {
-    const testBas = gunNo(tOf(sezonBasi(ILK_GUN)).getUTCFullYear() + 1, 7, 1);
+    const testBas = Math.max(gunNo(tOf(sezonBasi(ILK_GUN)).getUTCFullYear() + 1, 7, 1), GBAS == null ? -Infinity : GBAS);
     const top = {}; PAZARLAR.forEach(p => top[p[0]] = { s: 0, t: 0, nt: 0, pt: 0, pn: 0, kar: 0, on: 0, tn: 0, th: 0 });
     const lig = {}; let testMac = 0;
     for (const [lk, liste] of Object.entries(GRUP)) {
-      let i0 = 0;
+      let i0 = 0; const b0 = GBAS == null ? 0 : bitisBul(liste, GBAS);
       for (let i = 0; i < liste.length; i++) {
         const t = liste[i];
         while (i0 < i && liste[i0].gun < t.gun) i0++;
         if (t.gun < testBas) continue;
         testMac++;
         for (const pz of PAZARLAR) { const s = sonucu(pz, t); if (s != null) { top[pz[0]].tn++; top[pz[0]].th += s; } }
-        if (!i0) continue;
-        const { pazar } = analiz(t, liste, i0, A);
+        if (i0 <= b0) continue;
+        const { pazar } = analiz(t, liste, i0, A, b0);
         pazar.forEach((p, k) => {
           if (!p.sinyal) return;
           const pz = PAZARLAR[k]; const s = sonucu(pz, t); if (s == null) return;
@@ -377,11 +385,26 @@ section.bt { display: grid; gap: 12px; }
   const saklaYaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 
   // ---------------------------------------------------------------- ayarlar
-  const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1 }, saklaAl("bob-ayar", {}));
+  const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1, gsec: "tum", gbas: null }, saklaAl("bob-ayar", {}));
   $("a-tol").value = String(A.tol); $("a-max").value = String(A.max); $("a-min").value = String(A.min); $("a-esik").value = String(A.esik);
+  // Benzer maç aramasında kullanılacak en eski maç tarihi (null = tüm veri)
+  let GBAS = null;
+  function gbasHesapla() {
+    const y = tOf(sezonBasi(bugun)).getUTCFullYear();
+    if (A.gsec === "sezon") GBAS = sezonBasi(bugun);
+    else if (A.gsec === "2sezon") GBAS = gunNo(y - 1, 7, 1);
+    else if (A.gsec === "12ay") GBAS = bugun - 365;
+    else if (A.gsec === "6ay") GBAS = bugun - 182;
+    else if (A.gsec === "ozel") GBAS = isoGun(A.gbas);
+    else GBAS = null;
+    $("a-gecmis").value = A.gsec;
+    $("a-gbas").value = GBAS == null ? "" : iso(GBAS);
+  }
+  gbasHesapla();
   function ayarOzet() {
     const o = $("ayar-ozet"); o.textContent = "";
-    o.append("Şu an: aynı ligde oranı ", el("b", null, "±" + (A.tol * 100).toLocaleString("tr-TR") + " puan"), " içindeki en yakın ",
+    o.append("Şu an: aynı ligde, ", el("b", null, GBAS == null ? "elimizdeki tüm geçmiş maçlar" : kisaTarih(GBAS) + " ve sonrasında oynanan maçlar"), " arasından oranı ",
+      el("b", null, "±" + (A.tol * 100).toLocaleString("tr-TR") + " puan"), " içindeki en yakın ",
       el("b", null, A.max + " maç"), " alınıyor; en az ", el("b", null, A.min + " maçta"), " ", el("b", null, A.esik === 1 ? "hepsi tutan" : "%" + Math.round(A.esik * 100) + " ve üzeri tutan"),
       " pazar sinyal sayılıyor. Değiştirince maçlar ve backtest yeniden hesaplanır.");
   }
@@ -390,6 +413,16 @@ section.bt { display: grid; gap: 12px; }
     A.tol = Number($("a-tol").value); A.max = Number($("a-max").value); A.min = Number($("a-min").value); A.esik = Number($("a-esik").value);
     saklaYaz("bob-ayar", A); ayarOzet(); onbellek.clear(); listeHazirla(); btBaslat();
   }));
+  function gecmisDegisti() { gbasHesapla(); saklaYaz("bob-ayar", A); ayarOzet(); onbellek.clear(); listeHazirla(); btBaslat(); }
+  $("a-gecmis").addEventListener("change", e => {
+    A.gsec = e.target.value;
+    if (A.gsec === "ozel" && !A.gbas) A.gbas = iso(sezonBasi(bugun));
+    gecmisDegisti();
+  });
+  $("a-gbas").addEventListener("change", e => {
+    if (!e.target.value) { A.gsec = "tum"; A.gbas = null; } else { A.gsec = "ozel"; A.gbas = e.target.value; }
+    gecmisDegisti();
+  });
 
   // ---------------------------------------------------------------- filtreler
   const fp = $("f-pazar");
@@ -442,7 +475,7 @@ section.bt { display: grid; gap: 12px; }
     const k = t.lig + "|" + t.gun + "|" + t.ev + "|" + t.dep + "|" + (t.ms ? 1 : 0);
     if (onbellek.has(k)) return onbellek.get(k);
     const l = GRUP[t.lig] || [];
-    const r = analiz(t, l, bitisBul(l, t.gun), A);
+    const r = analiz(t, l, bitisBul(l, t.gun), A, GBAS == null ? 0 : bitisBul(l, GBAS));
     onbellek.set(k, r); return r;
   }
   function listeHazirla() {
