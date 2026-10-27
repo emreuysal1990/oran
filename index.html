@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Düzen: başlıkta Güncelle tuşu; Gelecek / Geçmiş sekmeleri; filtre çubuğu (tarih, lig, pazar, sıralama); iddaa bülteni gibi maç satırları, açılınca tüm pazarlar ve benzer maçlar; altta ayarlar ve backtest. */
+/* Düzen: başlıkta Güncelle tuşu; Gelecek / Geçmiş sekmeleri; filtre çubuğu (tarih, lig, pazar, sıralama); iddaa bülteni gibi maç satırları, açılınca tüm pazarlar ve benzer maçlar; üstte sinyal ayarları, altta backtest. */
 :root {
   --bg: #eef2ef; --surface: #ffffff; --surface-2: #f6f8f6; --ink: #142019; --muted: #5a6a61; --line: #d6dfd8;
   --accent: #0b5d7a; --accent-soft: #e2eff4; --signal: #c98a06; --signal-soft: #fdf3dc;
@@ -27,6 +27,7 @@
   --accent: #62b6d3; --accent-soft: #15303a; --signal: #f0b43c; --signal-soft: #3a2d10;
   --hit: #4cc38a; --hit-soft: #133224; --miss: #f08158; --miss-soft: #3a1d12; --on-accent: #0e1411; --est: #c3a1ef; color-scheme: dark; }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
@@ -86,6 +87,7 @@ header.top { display: grid; gap: 10px; }
 .caret { color: var(--muted); transition: transform .15s; }
 .fx.open .caret { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .caret { transition: none; } }
+.fx:not(.open) > .detail { display: none; }
 .detail { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 14px; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
 .legend .e { color: var(--est); font-weight: 600; }
@@ -102,9 +104,11 @@ tr.sig td:first-child { box-shadow: inset 3px 0 0 var(--signal); }
 .ok { color: var(--hit); font-weight: 600; }
 .no { color: var(--miss); font-weight: 600; }
 .empty { padding: 24px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; }
-details.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
-details.panel summary { cursor: pointer; font-family: var(--f-display); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; }
-.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; }
+.panel h2 { font-size: 1.2rem; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.ayar-ozet { margin: 0; font-size: 13px; color: var(--muted); }
+.ayar-ozet b { color: var(--ink); font-weight: 600; }
 .form label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
 .form select { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; min-width: 0; }
 section.bt { display: grid; gap: 12px; }
@@ -134,6 +138,21 @@ section.bt { display: grid; gap: 12px; }
     <div class="meta" id="meta"><span>Veri yükleniyor…</span></div>
   </header>
 
+  <section class="panel" id="ayarlar" aria-labelledby="ayar-baslik">
+    <h2 id="ayar-baslik">Sinyal ayarları</h2>
+    <div class="form">
+      <label for="a-tol">Benzerlik toleransı
+        <select id="a-tol"><option value="0.015">±1,5 puan</option><option value="0.02">±2 puan</option><option value="0.025">±2,5 puan</option><option value="0.03">±3 puan</option><option value="0.04">±4 puan</option><option value="0.05">±5 puan</option></select></label>
+      <label for="a-max">En yakın kaç maç
+        <select id="a-max"><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
+      <label for="a-min">Sinyal için en az maç
+        <select id="a-min"><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
+      <label for="a-esik">Sinyal eşiği
+        <select id="a-esik"><option value="1">%100 (hepsi tuttu)</option><option value="0.9">%90</option><option value="0.8">%80</option></select></label>
+    </div>
+    <p class="ayar-ozet" id="ayar-ozet"></p>
+  </section>
+
   <div class="tabs" role="tablist" aria-label="Maçlar">
     <button type="button" role="tab" id="tab-g" aria-selected="true">Gelecek maçlar<span id="n-g"></span></button>
     <button type="button" role="tab" id="tab-p" aria-selected="false">Geçmiş maçlar<span id="n-p"></span></button>
@@ -154,19 +173,6 @@ section.bt { display: grid; gap: 12px; }
   <div class="banner" id="banner" hidden></div>
   <div id="fixtures"><div class="empty">Veri yükleniyor…</div></div>
 
-  <details class="panel" id="ayarlar">
-    <summary>Ayarlar</summary>
-    <div class="form">
-      <label for="a-tol">Benzerlik toleransı
-        <select id="a-tol"><option value="0.015">±1,5 puan</option><option value="0.02">±2 puan</option><option value="0.025">±2,5 puan</option><option value="0.03">±3 puan</option><option value="0.04">±4 puan</option><option value="0.05">±5 puan</option></select></label>
-      <label for="a-max">En yakın kaç maç
-        <select id="a-max"><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
-      <label for="a-min">Sinyal için en az maç
-        <select id="a-min"><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
-      <label for="a-esik">Sinyal eşiği
-        <select id="a-esik"><option value="1">%100 (hepsi tuttu)</option><option value="0.9">%90</option><option value="0.8">%80</option></select></label>
-    </div>
-  </details>
 
   <section class="bt">
     <h2>Sistem geçmişte nasıl çalıştı?</h2>
@@ -373,9 +379,16 @@ section.bt { display: grid; gap: 12px; }
   // ---------------------------------------------------------------- ayarlar
   const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1 }, saklaAl("bob-ayar", {}));
   $("a-tol").value = String(A.tol); $("a-max").value = String(A.max); $("a-min").value = String(A.min); $("a-esik").value = String(A.esik);
+  function ayarOzet() {
+    const o = $("ayar-ozet"); o.textContent = "";
+    o.append("Şu an: aynı ligde oranı ", el("b", null, "±" + (A.tol * 100).toLocaleString("tr-TR") + " puan"), " içindeki en yakın ",
+      el("b", null, A.max + " maç"), " alınıyor; en az ", el("b", null, A.min + " maçta"), " ", el("b", null, A.esik === 1 ? "hepsi tutan" : "%" + Math.round(A.esik * 100) + " ve üzeri tutan"),
+      " pazar sinyal sayılıyor. Değiştirince maçlar ve backtest yeniden hesaplanır.");
+  }
+  ayarOzet();
   ["a-tol", "a-max", "a-min", "a-esik"].forEach(id => $(id).addEventListener("change", () => {
     A.tol = Number($("a-tol").value); A.max = Number($("a-max").value); A.min = Number($("a-min").value); A.esik = Number($("a-esik").value);
-    saklaYaz("bob-ayar", A); onbellek.clear(); listeHazirla(); btBaslat();
+    saklaYaz("bob-ayar", A); ayarOzet(); onbellek.clear(); listeHazirla(); btBaslat();
   }));
 
   // ---------------------------------------------------------------- filtreler
