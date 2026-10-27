@@ -1,0 +1,50 @@
+name: Verileri güncelle
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"   # her 4 saatte bir (UTC)
+  workflow_dispatch:          # Actions sekmesinden elle çalıştırmak için
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Önceki indirmeleri geri yükle
+        uses: actions/cache@v4
+        with:
+          path: onbellek
+          key: veri-${{ github.run_id }}
+          restore-keys: veri-
+
+      - name: Veriyi indir ve dönüştür
+        run: |
+          mkdir -p _site
+          python3 guncelle.py --onbellek onbellek --cikti _site/veri.json
+          cp index.html _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
