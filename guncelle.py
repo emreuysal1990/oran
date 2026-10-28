@@ -538,6 +538,18 @@ def model_ekle(kat, gecmis, gecici_l, fikstur):
     return len(tum)
 
 
+def fikstur_lig_ozeti(f_kay):
+    """Gelecek maçların ligler bazında dökümü: {lig: {n, korner_yok, kart_yok}} (model denetimi için)."""
+    ozet = {}
+    for m in f_kay:
+        d = m.get("mdl")
+        e = ozet.setdefault(m["lig"], {"n": 0, "korner_yok": 0, "kart_yok": 0})
+        e["n"] += 1
+        e["korner_yok"] += int(d is None or d["mc"] is None)
+        e["kart_yok"] += int(d is None or d["mk"] is None)
+    return dict(sorted(ozet.items()))
+
+
 # ----------------------------------------------------------------------------- ana akış
 def main():
     ap = argparse.ArgumentParser()
@@ -736,7 +748,8 @@ def main():
                      "model": {"var": model_var, "hata": model_hata, "mac": n_mdl,
                                "gecmis_gol": sum(1 for r in m_liste if r[21] is not None), "gecmis_korner": sum(1 for r in m_liste if r[23] is not None),
                                "gecmis_kart": sum(1 for r in m_liste if r[24] is not None), "fikstur_gol": sum(1 for r in f_liste if r[11] is not None),
-                               "fikstur_korner": sum(1 for r in f_liste if r[13] is not None), "fikstur_kart": sum(1 for r in f_liste if r[14] is not None)}}
+                               "fikstur_korner": sum(1 for r in f_liste if r[13] is not None), "fikstur_kart": sum(1 for r in f_liste if r[14] is not None),
+                               "fikstur_lig": fikstur_lig_ozeti(f_kay)}}
     json_yaz(os.path.join(a.birikim, "durum.json"), durum)
     print(f"{len(m_liste)} maç, {len(g_liste)} geçici, {len(f_liste)} gelecek futbol maçı, "
           f"{len(nba_m)} NBA maçı, {len(nba_f)} gelecek NBA maçı → {a.cikti}")
