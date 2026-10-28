@@ -8,14 +8,14 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 | Adres | Ne |
 |---|---|
-| `/` (index.html) | **Yeni sürüm (v2):** oranlardan model, 113 pazar, kendi oranını gir, hesaplayıcı, canlı doğruluk kontrolü |
-| `/v1.html` | **Eski sürüm (v1):** "benzer oranlı geçmiş maç" yöntemi ve sinyaller |
-| `/v2.html` | Yeni sürümün sabit adresi (ana sayfa v1'e çevrilirse de erişilebilir) |
+| `/` | **Ana sayfa: eski sürüm (v1)**, "benzer oranlı geçmiş maç" yöntemi ve sinyaller (`v1.html` dosyası) |
+| `/v1.html` | Eski sürümün sabit adresi |
+| `/v2.html` | **Yeni model sürümü (v2):** oranlardan model, 113 pazar, kendi oranını gir, hesaplayıcı, canlı doğruluk kontrolü (`index.html` dosyası) |
 
-### Eski sürüme dönmek
+### Ana sayfayı değiştirmek
 
-1. **En kolayı:** `.github/workflows/guncelle.yml` dosyasında `ANA_SAYFA: index.html` satırını `ANA_SAYFA: v1.html` yapıp kaydedin (Commit changes). Birkaç dakika içinde ana adres eski sürüm olur; yeni sürüm `/v2.html` adresinde durur. Geri almak için satırı eski haline getirin.
-2. Eski sürümün **tüm deposu** (kod ve iş akışıyla) `v1-yedek` dalında saklıdır.
+1. `.github/workflows/guncelle.yml` dosyasındaki `ANA_SAYFA: v1.html` satırı ana adreste hangi sürümün açılacağını belirler. Yeni sürümü ana sayfa yapmak için `ANA_SAYFA: index.html` yazıp kaydedin (Commit changes); birkaç dakika içinde değişir. İki sürüm de her zaman `/v1.html` ve `/v2.html` adreslerinde durur.
+2. Eski sürümün **tüm deposu** (kod ve iş akışıyla) ayrıca `v1-yedek` dalında saklıdır.
 
 ## Veri (yalnızca yasal kaynaklar)
 

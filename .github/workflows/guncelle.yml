@@ -51,8 +51,9 @@ jobs:
         env:
           FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
-          # Ana sayfa hangi sürüm olsun? Eski sürüme dönmek için index.html yerine v1.html yazın (iki sürüm de her zaman v1.html ve v2.html adresinde durur).
-          ANA_SAYFA: index.html
+          # Ana sayfa hangi sürüm olsun? v1.html = sinyalli eski sürüm (şu an ana sayfa), index.html = yeni model sürümü.
+          # İki sürüm de her zaman v1.html ve v2.html adresinde durur.
+          ANA_SAYFA: v1.html
         run: |
           mkdir -p _site
           python3 guncelle.py --onbellek onbellek --birikim birikim --cikti _site/veri.json
