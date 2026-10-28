@@ -2,8 +2,10 @@
 
 Aynı ligde oranları benzer olan geçmiş maçlara bakarak gelecek maçlar için her pazarın tahmini ihtimalini ve adil oranını gösteren sayfa.
 
-- Veri: [football-data.co.uk](https://www.football-data.co.uk) (ücretsiz). Son 3 sezon + içinde bulunulan sezon, 22 lig.
-- GitHub Actions veriyi **her 4 saatte bir** kendiliğinden indirir ve sayfayı yeniler. Sayfadaki **Güncelle** tuşu en son veriyi getirir.
+- Veri: [football-data.co.uk](https://www.football-data.co.uk) (ücretsiz): 22 Avrupa ligi + MLS, İsveç, Norveç, Danimarka, Finlandiya.
+- İsteğe bağlı [The Odds API](https://the-odds-api.com) anahtarı (`THE_ODDS_API_KEY` secret): Şampiyonlar Ligi, Avrupa Ligi, Konferans Ligi, NBA ve ek liglerin güncel oranları. Kupaların ve NBA'in geçmişi, oynanan maçlarla `veri` dalında birikir.
+- İsteğe bağlı football-data.org anahtarı (`FOOTBALL_DATA_ORG_TOKEN` secret): 8 büyük ligde aynı gün skorlar.
+- GitHub Actions veriyi **her saat** indirmeye çalışır (GitHub bunu geciktirebilir). Sayfadaki **Güncelle** tuşu en son veriyi getirir.
 - Adil oranlar motorun tahminidir, bahis şirketi oranı değildir. Gerçek oran yalnızca MS 1/X/2 ve 2,5 Alt/Üst için vardır (Bet365).
 
 ## Kurulum (bir kerelik)

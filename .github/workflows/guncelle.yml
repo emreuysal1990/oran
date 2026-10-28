@@ -2,13 +2,13 @@ name: Verileri güncelle
 
 on:
   schedule:
-    - cron: "17 * * * *"      # her saat (UTC)
-  workflow_dispatch:          # Actions sekmesinden elle çalıştırmak için
+    - cron: "17 * * * *"      # her saat (UTC) - GitHub bunu bazen geciktirir
+  workflow_dispatch:          # elle ya da dışarıdan (cron-job.org) tetiklemek için
   push:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write             # biriken kupa/NBA verisini "veri" dalına kaydetmek için
   pages: write
   id-token: write
 
@@ -29,13 +29,34 @@ jobs:
           key: veri-${{ github.run_id }}
           restore-keys: veri-
 
+      - name: Biriken veriyi getir
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$URL" veri >/dev/null 2>&1; then
+            git clone -q --depth 1 --branch veri "$URL" birikim
+          else
+            mkdir birikim && git -C birikim init -q -b veri && git -C birikim remote add origin "$URL"
+          fi
+
       - name: Veriyi indir ve dönüştür
         env:
           FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
+          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
         run: |
           mkdir -p _site
-          python3 guncelle.py --onbellek onbellek --cikti _site/veri.json
+          python3 guncelle.py --onbellek onbellek --birikim birikim --cikti _site/veri.json
           cp index.html _site/index.html
+
+      - name: Biriken veriyi kaydet
+        run: |
+          cd birikim
+          git add -A
+          if ! git diff --cached --quiet; then
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Veri birikimi"
+            git push -q origin HEAD:veri
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
