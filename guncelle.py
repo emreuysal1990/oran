@@ -673,7 +673,7 @@ def main():
 
     # Model: her maç için oranlardan beklenen gol (+ korner ve kart ortalaması). Sayfa tüm pazarları bunlardan hesaplar.
     kat = json_oku(os.path.join(KOK, "katsayilar.json"), None)
-    model_var = False
+    model_var, n_mdl, model_hata = False, 0, None
     if kat:
         try:
             n_mdl = model_ekle(kat, m_kay, g_kay, f_kay)
@@ -682,8 +682,10 @@ def main():
         except Exception as e:  # noqa  -- model çökse bile veri akışı sürsün
             import traceback
             traceback.print_exc()
+            model_hata = f"{type(e).__name__}: {e}"[:200]
             print(f"  ! model hesaplanamadı: {e}")
     else:
+        model_hata = "katsayilar.json yok"
         print("  ! katsayilar.json yok; model hesaplanmadı")
 
     def ayr(m):
@@ -729,7 +731,12 @@ def main():
     lig_say = Counter(LIGLER[r[0]] for r in m_liste)
     durum["ozet"] = {"mac": len(m_liste), "gecici": len(g_liste), "fikstur": len(f_liste), "nba_mac": len(nba_m),
                      "nba_fikstur": len(nba_f), "son_mac_gunu": max(r[1] for r in m_liste),
-                     "lig": dict(sorted(lig_say.items())), "odds_api_aktif": api.aktif()}
+                     "lig": dict(sorted(lig_say.items())), "odds_api_aktif": api.aktif(),
+                     # model denetimi: kaç maça beklenen gol / korner / kart yazıldı (günlüğe bakmadan kontrol için)
+                     "model": {"var": model_var, "hata": model_hata, "mac": n_mdl,
+                               "gecmis_gol": sum(1 for r in m_liste if r[21] is not None), "gecmis_korner": sum(1 for r in m_liste if r[23] is not None),
+                               "gecmis_kart": sum(1 for r in m_liste if r[24] is not None), "fikstur_gol": sum(1 for r in f_liste if r[11] is not None),
+                               "fikstur_korner": sum(1 for r in f_liste if r[13] is not None), "fikstur_kart": sum(1 for r in f_liste if r[14] is not None)}}
     json_yaz(os.path.join(a.birikim, "durum.json"), durum)
     print(f"{len(m_liste)} maç, {len(g_liste)} geçici, {len(f_liste)} gelecek futbol maçı, "
           f"{len(nba_m)} NBA maçı, {len(nba_f)} gelecek NBA maçı → {a.cikti}")
