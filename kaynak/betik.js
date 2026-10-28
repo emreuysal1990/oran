@@ -511,7 +511,7 @@
     const top = kutu.reduce((a, k) => (a.n += k.n, a.p += k.p, a.y += k.y, a), { n: 0, p: 0, y: 0 });
     if (!top.n) { $("kal-lead").textContent = "Bu seçim için sonuçlanmış pazar yok."; return; }
     let sapma = 0; kutu.forEach(k => { if (k.n) sapma += Math.abs(k.y / k.n - k.p / k.n) * k.n; });
-    $("kal-lead").textContent = (donem === "12ay" ? "Son 12 ayda" : "2023'ten beri") + " oynanan " + binlik(nMac) + " maçta, modelin her pazar için maçtan önce verdiği ihtimaller gruplandı. Model ortalaması %" +
+    $("kal-lead").textContent = (donem === "12ay" ? "Son 12 ayda" : "Sayfadaki tüm geçmişte (" + kisaTarih(C.ILK_GUN) + " sonrası)") + " oynanan " + binlik(nMac) + " maçta, modelin her pazar için maçtan önce verdiği ihtimaller gruplandı. Model ortalaması %" +
       ondalik(top.p / top.n * 100, 1) + ", gerçekleşen %" + ondalik(top.y / top.n * 100, 1) + "; ağırlıklı ortalama sapma " + ondalik(sapma / top.n * 100, 1) + " puan. İdeal durumda her satırda iki yüzde birbirine eşittir." +
       (C.ad === "futbol" ? " (Korner ve kart modelinin katsayıları da bu verilerle eğitildiği için o gruplarda sonuç biraz iyimser olabilir.)" : "");
     const h = tab.createTHead().insertRow(); ["Modelin ihtimali", "Pazar sayısı", "Model ortalaması", "Gerçekleşen", "Fark"].forEach((x, i) => h.append(el("th", i ? "n" : null, x)));

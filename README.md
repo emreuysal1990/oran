@@ -24,7 +24,7 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 - İsteğe bağlı football-data.org anahtarı (`FOOTBALL_DATA_ORG_TOKEN` secret): 8 büyük ligde aynı gün skorlar.
 - Anahtarları yalnızca GitHub'da **Settings → Secrets and variables → Actions** altına siz eklersiniz; kimseyle paylaşmayın.
 - GitHub Actions veriyi **her saat** indirmeye çalışır (GitHub bunu geciktirebilir). Sayfadaki **Güncelle** tuşu en son veriyi getirir.
-- Sayfalar yalnızca 1 Temmuz 2023'ten sonraki maçları (2023/24 sezonundan itibaren) kullanır.
+- Sayfa son 4 sezonu kullanır (şu an 1 Temmuz 2023'ten itibaren, yani 2023/24 sezonundan); daha eski veri kullanılmaz. Model katsayıları da 1 Temmuz 2023 sonrası veriyle eğitilmiştir.
 
 ## Model
 
