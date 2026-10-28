@@ -22,6 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: NumPy kur (model hesapları için)
+        run: pip install numpy || echo "NumPy kurulamadı; model değerleri sayfada hesaplanacak"
+
       - name: Önceki indirmeleri geri yükle
         uses: actions/cache@v4
         with:
@@ -44,10 +51,14 @@ jobs:
         env:
           FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+          # Ana sayfa hangi sürüm olsun? Eski sürüme dönmek için index.html yerine v1.html yazın (iki sürüm de her zaman v1.html ve v2.html adresinde durur).
+          ANA_SAYFA: index.html
         run: |
           mkdir -p _site
           python3 guncelle.py --onbellek onbellek --birikim birikim --cikti _site/veri.json
-          cp index.html _site/index.html
+          cp index.html _site/v2.html
+          cp v1.html _site/v1.html
+          cp "$ANA_SAYFA" _site/index.html
 
       - name: Biriken veriyi kaydet
         run: |

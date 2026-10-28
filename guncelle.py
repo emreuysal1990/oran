@@ -190,6 +190,9 @@ def oku(r, varsayilan_lig, sonuclu):
                       None if hh is None or ha is None else int(hh), None if hh is None or ha is None else int(ha),
                       None if hc is None or ac is None else int(hc + ac),
                       None if any(k is None for k in kart) else int(sum(kart))]
+        hy, ay, hr, ar = kart       # takım bazında: model "son 20 maçta attığı/yediği korner ve kart" özelliklerini buradan kurar
+        m["ayr"] = [None if hc is None or ac is None else int(hc), None if hc is None or ac is None else int(ac),
+                    None if hy is None or hr is None else int(hy + hr), None if ay is None or ar is None else int(ay + ar)]
     return m
 
 
@@ -484,6 +487,57 @@ def json_yaz(yol, veri):
         json.dump(veri, f, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
+# ----------------------------------------------------------------------------- model (oranlardan Poisson / Dixon-Coles)
+KOK = os.path.dirname(os.path.abspath(__file__))
+
+
+def yuvarla(x, n):
+    return None if x is None else round(float(x), n)
+
+
+def model_ekle(kat, gecmis, gecici_l, fikstur):
+    """
+    Her maç sözlüğüne m["mdl"] ekler (yerinde):
+      lh, la  : oranlardan (marj temizlenmiş 1X2 + 2,5 Alt/Üst) uydurulan beklenen ev / deplasman golü
+      mc, mk  : beklenen toplam korner / kart (negatif binom ortalaması); modeli olmayan liglerde None
+      oz      : [korner özellikleri, kart özellikleri, ligin 2,5 üst oranı] (sayfa, kullanıcı kendi oranını girince yeniden hesaplar)
+    Özellikler yalnızca maçtan ÖNCEKİ günlerin maçlarından kurulur (modelkit.ozellik_kur).
+    """
+    import numpy as np
+    import modelkit as mk
+    assert abs(kat["rho"] - mk.RHO) < 1e-12 and abs(kat["kappa"] - mk.KAPPA) < 1e-12, "katsayilar.json modelkit sabitleriyle uyuşmuyor"
+    tum = gecmis + gecici_l + fikstur
+    tum.sort(key=lambda m: m["gun"])
+    sat = []
+    for m in tum:
+        s, a = m.get("sonuc"), m.get("ayr") or [None] * 4
+        sat.append({"lig": m["lig"], "gun": m["gun"], "ev": m["ev"], "dep": m["dep"], "hc": a[0], "ac": a[1], "hk": a[2], "ak": a[3],
+                    "fh": s[0] if s else None, "fa": s[1] if s else None})
+    F = mk.ozellik_kur(sat)
+    o = np.array([[(x / 100.0 if x else np.nan) for x in m["oran"][:5]] for m in tum], float)
+    P = mk.marj_guc(o[:, 0], o[:, 1], o[:, 2])
+    pu = np.full(len(tum), np.nan)
+    var = ~np.isnan(o[:, 3]) & ~np.isnan(o[:, 4])
+    if var.any():
+        pu[var] = mk.marj_guc(o[var, 3], o[var, 4])[:, 0]
+    lig_u = np.array([f["u"] if f["u"] is not None else 0.5 for f in F], float)
+    onsel = mk.pu_onsel_tahmin(P[:, 0], P[:, 1], P[:, 2], lig_u, kat["pu_onsel_w"])
+    lh, la = mk.lambda_uydur(P[:, 0], P[:, 1], P[:, 2], pu, rho=kat["rho"], pu_onsel=onsel)
+    lig = np.array([m["lig"] for m in tum])
+    mc, okc = mk.kk_matris([f["c"] for f in F], lh, la, lig, kat["c"])
+    mkart, okk = mk.kk_matris([f["k"] for f in F], lh, la, lig, kat["k"])
+    for i, m in enumerate(tum):
+        f = F[i]
+        if not (np.isfinite(lh[i]) and np.isfinite(la[i])):      # bozuk oran satırı: model yok (JSON'a NaN yazılmasın)
+            m["mdl"] = None
+            continue
+        m["mdl"] = {"lh": round(float(lh[i]), 3), "la": round(float(la[i]), 3),
+                    "mc": round(float(mc[i]), 2) if okc[i] and np.isfinite(mc[i]) else None,
+                    "mk": round(float(mkart[i]), 2) if okk[i] and np.isfinite(mkart[i]) else None,
+                    "oz": [[yuvarla(x, 3) for x in f["c"]], [yuvarla(x, 3) for x in f["k"]], yuvarla(f["u"], 4)]}
+    return len(tum)
+
+
 # ----------------------------------------------------------------------------- ana akış
 def main():
     ap = argparse.ArgumentParser()
@@ -609,19 +663,55 @@ def main():
     for b in birikim["sonuclu"].values():
         if b["tur"] == "futbol" and b["lig"] in KUPALAR:
             kupa_m.append({**b, "oran": b["oran"], "ok": OK_API, "sonuc": [b["skor"][0], b["skor"][1], None, None, None, None]})
-    m_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] for m in sirala(list(maclar.values()) + kupa_m)]
-    g_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] for m in sirala(gecici.values())]
+    m_kay = sirala(list(maclar.values()) + kupa_m)
+    g_kay = sirala(gecici.values())
     simdi_ts = simdi()
     api_fik = [{**b, "ok": OK_API} for b in birikim["bekleyen"].values()
                if b["tur"] == "futbol" and utc(b["ts"]) > simdi_ts - timedelta(hours=2)]
     f_kaynak = [m for k, m in arsiv.items() if k not in maclar and k not in gecici and m["gun"] >= bugun_no]
-    f_liste = [bas_alanlar(m) + m["oran"] + [m["ok"]] for m in sirala(f_kaynak + api_fik)]
+    f_kay = sirala(f_kaynak + api_fik)
+
+    # Model: her maç için oranlardan beklenen gol (+ korner ve kart ortalaması). Sayfa tüm pazarları bunlardan hesaplar.
+    kat = json_oku(os.path.join(KOK, "katsayilar.json"), None)
+    model_var = False
+    if kat:
+        try:
+            n_mdl = model_ekle(kat, m_kay, g_kay, f_kay)
+            model_var = True
+            print(f"  model: {n_mdl} maç için beklenen gol / korner / kart hesaplandı")
+        except Exception as e:  # noqa  -- model çökse bile veri akışı sürsün
+            import traceback
+            traceback.print_exc()
+            print(f"  ! model hesaplanamadı: {e}")
+    else:
+        print("  ! katsayilar.json yok; model hesaplanmadı")
+
+    def ayr(m):
+        return m.get("ayr") or [None] * 4
+
+    def mdl_gecmis(m):
+        d = m.get("mdl")
+        return ayr(m) + ([d["lh"], d["la"], d["mc"], d["mk"]] if d else [None] * 4)
+
+    def mdl_fikstur(m):
+        d = m.get("mdl")
+        return [d["lh"], d["la"], d["mc"], d["mk"], d["oz"]] if d else [None] * 5
+
+    # Satır düzeni (sayfa v1 yalnızca ilk alanları okur, sonradan eklenenler sona eklendi):
+    #   m, g : [lig, gün, saat, ev, dep, evGol, depGol, İYev, İYdep, korner, kart, o1, ox, o2, ou, oa, kaynak,
+    #           evKorner, depKorner, evKart, depKart, lamEv, lamDep, muKorner, muKart]
+    #   f    : [lig, gün, saat, ev, dep, o1, ox, o2, ou, oa, kaynak, lamEv, lamDep, muKorner, muKart, [korner özellikleri, kart özellikleri, lig üst oranı]]
+    m_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] + mdl_gecmis(m) for m in m_kay]
+    g_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] + mdl_gecmis(m) for m in g_kay]
+    f_liste = [bas_alanlar(m) + m["oran"] + [m["ok"]] + mdl_fikstur(m) for m in f_kay]
     nba_m = [[b["gun"], b["saat"], t(b["ev"]), t(b["dep"])] + b["skor"] + b["oran"]
              for b in sirala([b for b in birikim["sonuclu"].values() if b["tur"] == "nba"])]
     nba_f = [[b["gun"], b["saat"], t(b["ev"]), t(b["dep"])] + b["oran"]
              for b in sirala([b for b in birikim["bekleyen"].values() if b["tur"] == "nba" and utc(b["ts"]) > simdi_ts - timedelta(hours=2)])]
     veri = {
         "olusturma": simdi_ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "surum": 2,
+        "model": kat if model_var else None,
         "kaynak": "football-data.co.uk",
         "lig": LIGLER,
         "takim": [ad for ad, _ in sorted(takim.items(), key=lambda x: x[1])],

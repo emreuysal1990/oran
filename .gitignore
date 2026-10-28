@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pkl
+onbellek/
+birikim/
+_site/
+arastirma/Matches.csv
