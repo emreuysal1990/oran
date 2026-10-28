@@ -28,6 +28,8 @@ python3 degerlendir3.py   # iki fold, yeni model + tablo    -> degerlendirme_tab
 python3 t_sinyal.py       # v1 "sinyal"lerinin isabeti
 python3 t_roi.py          # düz bahis ve sinyal ROI'si
 python3 t_genis.py        # 62 ek pazarın doğruluğu
+python3 t_esik.py         # eski sinyaller ve yeni modelin ihtimal eşikleri (isabet)
+python3 t_guclu.py        # eski sinyalleri tahmini ihtimal / model ihtimaliyle süzme
 python3 egit.py son ../katsayilar.json   # üretim katsayıları (tüm veriyle)
 python3 parite_uret.py    # ../kaynak/parite.json (JS model testi için)
 ```

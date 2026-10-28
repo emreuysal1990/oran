@@ -164,6 +164,8 @@ section.bt { display: grid; gap: 12px; }
         <select id="a-min"><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
       <label for="a-esik">Sinyal eşiği
         <select id="a-esik"><option value="1">%100 (hepsi tuttu)</option><option value="0.9">%90</option><option value="0.8">%80</option></select></label>
+      <label for="a-tmin">Sinyal için en az tahmini ihtimal
+        <select id="a-tmin"><option value="0">Sınır yok</option><option value="0.8">%80</option><option value="0.85">%85</option><option value="0.9">%90</option></select></label>
       <label for="a-gecmis">Kullanılacak geçmiş maçlar
         <select id="a-gecmis"><option value="tum">Tümü (2023'ten beri)</option><option value="sezon">Bu sezon</option><option value="2sezon">Son 2 sezon</option><option value="12ay">Son 12 ay</option><option value="6ay">Son 6 ay</option><option value="ozel">Seçtiğim tarihten itibaren</option></select></label>
       <label for="a-gbas">Başlangıç tarihi
@@ -459,10 +461,12 @@ section.bt { display: grid; gap: 12px; }
       const tn = n[k] + gn[k], lo = ligOrt(S, t.lig, la, lb, k);
       const tah = lo == null ? (tn ? (h[k] + gh[k]) / tn : null) : (h[k] + gh[k] + ONCUL * lo) / (tn + ONCUL);
       return { kod: pz[0], n: n[k], h: h[k], normal: gn[k] ? gh[k] / gn[k] : null, ng: gn[k], tah, tn, lo, gh: gh[k],
-        sinyal: n[k] >= A.min && n[k] > 0 && h[k] / n[k] >= A.esik - 1e-9 };
+        sinyal: n[k] >= A.min && n[k] > 0 && h[k] / n[k] >= A.esik - 1e-9 && tahminiYeter(tah) };
     });
     return { benzer, pazar, auVar };
   }
+  // Sinyal için tahmini ihtimal sınırı (Ayarlar'dan; 0 = sınır yok)
+  const tahminiYeter = tah => !(A.tmin > 0) || (tah != null && tah >= A.tmin - 1e-9);
 
   // Backtest: her maç sadece kendinden önceki maçlarla analiz edilir. Parça parça çalışır, sayfa donmaz.
   async function backtest(S, iptal, ilerle) {
@@ -478,7 +482,7 @@ section.bt { display: grid; gap: 12px; }
       if (j % 300 === 0) { await new Promise(r => setTimeout(r, 0)); if (iptal()) return null; ilerle(Math.round(j / hedefler.length * 100)); }
       const t = hedefler[j]; testMac++;
       for (let k = 0; k < P; k++) if (t.s[k] >= 0) { top[S.PAZARLAR[k][0]].tn++; top[S.PAZARLAR[k][0]].th += t.s[k]; }
-      const { H, tolU, auVar, bas, bitis } = sinirlar(t);
+      const { H, tolU, auVar, bas, bitis, la, lb } = sinirlar(t);
       if (!H || bitis <= bas) continue;
       const { yakin, genis } = tara(t, H, bas, bitis, A.tol, tolU, auVar);
       const sec = yakin.slice(0, A.max).map(x => x[1]);
@@ -489,6 +493,11 @@ section.bt { display: grid; gap: 12px; }
         if (!(n[k] >= A.min && n[k] > 0 && h[k] / n[k] >= A.esik - 1e-9) || t.s[k] < 0) continue;
         if (!secSet) secSet = new Set(sec);
         let gn = 0, gh = 0; for (const i of genis) { if (secSet.has(i)) continue; const v = H.l[i].s[k]; if (v >= 0) { gn++; gh += v; } }
+        if (A.tmin > 0) {
+          const tn = n[k] + gn, lo = ligOrt(S, t.lig, la, lb, k);
+          const tah = lo == null ? (tn ? (h[k] + gh) / tn : null) : (h[k] + gh + ONCUL * lo) / (tn + ONCUL);
+          if (!tahminiYeter(tah)) continue;
+        }
         const normal = gn ? gh / gn : 1, s = t.s[k], pz = S.PAZARLAR[k];
         const a = top[pz[0]]; a.s++; a.t += s; a.nt += normal;
         const oran = pz[5] ? t[pz[5]] : null;
@@ -520,11 +529,13 @@ section.bt { display: grid; gap: 12px; }
   const saklaYaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 
   // ================================================================ ayarlar
-  const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1, gsec: "tum", gbas: null, havuz: "kendi", au: "msau", ttol: 4 }, saklaAl("bob-ayar", {}));
+  const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1, tmin: 0.8, gsec: "tum", gbas: null, havuz: "kendi", au: "msau", ttol: 4 }, saklaAl("bob-ayar", {}));
   if (!["kendi", "ulke", "seviye", "tum"].includes(A.havuz)) A.havuz = "kendi";
   if (!["msau", "ms"].includes(A.au)) A.au = "msau";
+  if (![0, 0.8, 0.85, 0.9].includes(A.tmin)) A.tmin = 0.8;
   $("a-havuz").value = A.havuz; $("a-au").value = A.au; $("a-ttol").value = String(A.ttol);
   $("a-tol").value = String(A.tol); $("a-max").value = String(A.max); $("a-min").value = String(A.min); $("a-esik").value = String(A.esik);
+  $("a-tmin").value = String(A.tmin);
   let GBAS = null;
   function gbasHesapla() {
     const y = tOf(sezonBasi(bugun)).getUTCFullYear();
@@ -543,6 +554,7 @@ section.bt { display: grid; gap: 12px; }
     const o = $("ayar-ozet"); o.textContent = "";
     const zaman = el("b", null, GBAS == null ? "elimizdeki tüm geçmiş maçlar" : kisaTarih(GBAS) + " ve sonrasında oynanan maçlar");
     const sonu = [" alınıyor; en az ", el("b", null, A.min + " maçta"), " ", el("b", null, A.esik === 1 ? "hepsi tutan" : "%" + Math.round(A.esik * 100) + " ve üzeri tutan"),
+      ...(A.tmin > 0 ? [" ve ", el("b", null, "tahmini ihtimali %" + Math.round(A.tmin * 100) + " ve üzeri olan")] : []),
       " pazar sinyal sayılıyor. Değiştirince maçlar ve backtest yeniden hesaplanır."];
     if (C.ad === "nba") {
       o.append("Şu an: NBA'de, ", zaman, " arasından galibiyet ihtimali ", el("b", null, "±" + (A.tol * 100).toLocaleString("tr-TR") + " puan"),
@@ -564,8 +576,9 @@ section.bt { display: grid; gap: 12px; }
     if (havuzDa) { havuzKur(SP.futbol); havuzKur(SP.nba); }
     onbellek.clear(); listeHazirla(); btBaslat();
   }
-  ["a-tol", "a-max", "a-min", "a-esik", "a-ttol", "a-au"].forEach(id => $(id).addEventListener("change", () => {
+  ["a-tol", "a-max", "a-min", "a-esik", "a-tmin", "a-ttol", "a-au"].forEach(id => $(id).addEventListener("change", () => {
     A.tol = Number($("a-tol").value); A.max = Number($("a-max").value); A.min = Number($("a-min").value); A.esik = Number($("a-esik").value);
+    A.tmin = Number($("a-tmin").value);
     A.ttol = Number($("a-ttol").value); A.au = $("a-au").value;
     hepsiniYenile(false);
   }));
@@ -903,6 +916,7 @@ section.bt { display: grid; gap: 12px; }
   [
     "Adil oran*: Motorun benzer oranlı geçmiş maçlardan hesapladığı ihtimalin karşılığıdır (1 ÷ ihtimal). Hiçbir bahis şirketinin oranı değildir. İddaa'daki oran bu adil orandan yüksekse, o pazar motorun tahminine göre değerli görünür; düşükse değil.",
     "Tahmini ihtimal = (geniş penceredeki tutan maç sayısı + 8 × lig ortalaması) ÷ (geniş penceredeki maç sayısı + 8). Geniş pencere, toleransın iki katı içindeki tüm benzer maçlardır (en yakın maçlar dahil). Lig ortalaması, maçın kendi liginin o tarihe kadarki tutma oranıdır (en az 30 maç varsa); az maç varsa tahmini ona doğru çeker. \"En yakın maçlar\" sütunu ise sadece en yakın maçlardaki sayıdır; sinyal buna göre verilir.",
+    "Sinyal için en az tahmini ihtimal: en yakın maçların hepsi tutsa bile tahmini ihtimal bu sınırın altındaysa sinyal verilmez. Temmuz 2024 – Eylül 2026 testinde (22 Avrupa ligi, 15.406 maç) sınırsız sinyallerin %78'i, tahmini ihtimali %80 ve üzeri olanların %84'ü, %85 ve üzeri olanların %86'sı, %90 ve üzeri olanların %89'u tuttu. Tahmini ihtimali %60'ın altındaki sinyallerin ise ancak yarısı tuttu. Sınır yükseldikçe sinyal sayısı azalır.",
     "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). İddaa oranı değildir. Saatler Türkiye saatidir.",
     "NBA: benzerlik galibiyet ihtimali ve toplam sayı çizgisine göre aranır. Handikap ve toplam pazarları her maçın kendi çizgisine göre değerlendirilir; çizgiye tam eşit sonuç iade sayılır. Maç sonucu uzatmalar dahildir.",
     "Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, İskandinav ligleri ve kupalarda yok). Bu sayfa istatistiksel bir analizdir, bahis tavsiyesi değildir."

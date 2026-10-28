@@ -8,7 +8,7 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 | Adres | Ne |
 |---|---|
-| `/` | **Ana sayfa: eski sürüm (v1)**, "benzer oranlı geçmiş maç" yöntemi ve sinyaller (`v1.html` dosyası) |
+| `/` | **Ana sayfa: eski sürüm (v1)**, "benzer oranlı geçmiş maç" yöntemi ve sinyaller (`v1.html` dosyası). Sinyal için tahmini ihtimal en az %80 olmalı (Ayarlar'dan sınır yok / %80 / %85 / %90 seçilebilir). |
 | `/v1.html` | Eski sürümün sabit adresi |
 | `/v2.html` | **Yeni model sürümü (v2):** oranlardan model, 113 pazar, kendi oranını gir, hesaplayıcı, canlı doğruluk kontrolü (`index.html` dosyası) |
 
@@ -54,6 +54,7 @@ Temmuz 2024 – Eylül 2026 arasında oynanan **15.406 maç** (22 Avrupa ligi). 
 
 - Yeni model 51 pazarın 51'inde hem eski yöntemden hem lig ortalamasından daha doğru. Eski yöntem 51 pazarın yalnızca 20'sinde lig ortalamasını geçebildi.
 - Eski yöntemin "sinyal" verdiği 25.586 maç-pazar çiftinin %78,2'si tuttu (eski yöntem %80,5 bekliyordu); yeni modelin aynı çiftler için ortalama ihtimali %77,5. Yani sinyaller, oranların zaten söylediğinin üstüne yalnızca 0,7 puan ekliyor.
+- **Sinyalleri süzmek:** en yakın maçların hepsi tutsa bile "Tahmini ihtimal" düşükse sinyal zayıf. Tahmini ihtimali %60'ın altındaki sinyallerin %50'si, %80 ve üzerindekilerin %84'ü, %85 ve üzerindekilerin %86'sı, %90 ve üzerindekilerin %89'u tuttu (maç başına sırasıyla 0,96 / 0,62 / 0,28 sinyal). Bu yüzden eski sayfada sinyal için varsayılan sınır %80'dir (`arastirma/t_guclu.py`).
 - MS ve 2,5 Alt/Üst pazarlarındaki sinyalli 581 bahsin Bet365 oranıyla getirisi −%5,2 (±6,2). Tüm maçlara düz oynanan MS 1 −%7,8, MS X −%5,3, MS 2 −%11,4, 2,5 Üst −%4,1, 2,5 Alt −%7,2 getirdi (en yüksek oran seçilse bile −%1 ile −%7).
 - 62 birleşik/ek pazarda (handikap, İY/MS, MS + Alt/Üst, KG + Alt/Üst, toplam gol aralığı, yarı sonuçları) modelin ihtimali ile gerçekleşen oran arasındaki ortalama fark 0,5 puan, en büyük fark 1,5 puan (handikap pazarları).
 
