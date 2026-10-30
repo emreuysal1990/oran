@@ -19,11 +19,12 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 ## Veri (yalnızca yasal kaynaklar)
 
-- [football-data.co.uk](https://www.football-data.co.uk) (ücretsiz): 22 Avrupa ligi (Bet365 oranları, korner, kart, ilk yarı), ayrıca MLS ve İsveç, Norveç, Danimarka, Finlandiya ligleri.
+- [football-data.co.uk](https://www.football-data.co.uk) (ücretsiz): 22 Avrupa ligi (Bet365 oranları, korner, kart, ilk yarı), ayrıca MLS, Brezilya Série A ve İsveç, Norveç, Danimarka, Finlandiya ligleri (bu ek liglerde yalnızca skor ve maç sonucu oranı var).
 - İsteğe bağlı [The Odds API](https://the-odds-api.com) anahtarı (`THE_ODDS_API_KEY` secret): Şampiyonlar Ligi, Avrupa Ligi, Konferans Ligi, NBA ve ek liglerin güncel oranları. Kupaların ve NBA'in geçmişi, oynanan maçlarla `veri` dalında birikir.
-- İsteğe bağlı football-data.org anahtarı (`FOOTBALL_DATA_ORG_TOKEN` secret): 8 büyük ligde aynı gün skorlar.
+- İsteğe bağlı football-data.org anahtarı (`FOOTBALL_DATA_ORG_TOKEN` secret): Premier Lig, Championship, Bundesliga, Serie A, La Liga, Ligue 1, Eredivisie, Portekiz ve Brezilya Série A'da **aynı gün skor** (football-data.co.uk sonuçları 1-4 gün sonra ekler). Ücretsiz: [football-data.org](https://www.football-data.org/client/register) adresinden kayıt olunca e-postayla gelen anahtar `FOOTBALL_DATA_ORG_TOKEN` adıyla eklenir. Sayfanın üstündeki "Aynı gün skor" satırı anahtarın çalışıp çalışmadığını gösterir.
 - Anahtarları yalnızca GitHub'da **Settings → Secrets and variables → Actions** altına siz eklersiniz; kimseyle paylaşmayın.
-- GitHub Actions veriyi **her saat** indirmeye çalışır (GitHub bunu geciktirebilir). Sayfadaki **Güncelle** tuşu en son veriyi getirir.
+- GitHub Actions veriyi **15 dakikada bir** kontrol eder (GitHub zamanlanmış çalışmaları yoğun saatlerde geciktirebilir ya da atlayabilir). Kaynakta değişmeyen dosyalar yeniden indirilmez. Sayfadaki **Güncelle** tuşu en son veriyi getirir.
+- Oynanmış ama sonucu kaynağa henüz eklenmemiş maçlar (son 7 gün) "Geçmiş maçlar"da **"sonuç bekleniyor"** etiketiyle, maç öncesi analizleriyle görünür; sonuç gelince kendiliğinden tamamlanır.
 - Sayfa son 4 sezonu kullanır (şu an 1 Temmuz 2023'ten itibaren, yani 2023/24 sezonundan); daha eski veri kullanılmaz. Model katsayıları da 1 Temmuz 2023 sonrası veriyle eğitilmiştir.
 
 ## Model
@@ -84,5 +85,6 @@ Ayrıntılar ve yeniden üretme adımları: [`arastirma/README.md`](arastirma/RE
 
 - Depo herkese açık olduğu için sayfa da bağlantıyı bilen herkese açıktır.
 - GitHub, 60 gün hiç işlem görmeyen depolarda zamanlanmış iş akışlarını durdurur ve e-posta atar; e-postadaki bağlantıyla tek tıkla yeniden açılır.
-- football-data.co.uk gelecek maçların oranlarını hafta sonu için Cuma, hafta içi için Salı öğleden sonra yayınlar.
+- football-data.co.uk gelecek maçların oranlarını hafta sonu için Cuma, hafta içi için Salı öğleden sonra (Türkiye saatiyle genelde 16:00-20:00) yayınlar; o saate kadar "Gelecek maçlar" boş görünebilir. Ek liglerin (MLS, Brezilya, İskandinav) fikstürü daha sık yayınlanır.
+- Zamanlanmış çalışmalar yine de seyrek kalırsa, ücretsiz [cron-job.org](https://cron-job.org) ile iş akışı dışarıdan tetiklenebilir (GitHub'da yalnızca bu depoya "Actions: Read and write" izni olan bir fine-grained token gerekir; tokenı kimseyle paylaşmayın).
 - Korner ve kart sayıları, football-data.co.uk sonuçları yayınlayana kadar (aynı gün skor football-data.org'dan gelse bile) eksik olabilir.

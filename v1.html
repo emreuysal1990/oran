@@ -231,14 +231,14 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     SC3: "İskoçya League Two", D1: "Almanya Bundesliga", D2: "Almanya 2. Bundesliga", I1: "İtalya Serie A", I2: "İtalya Serie B",
     SP1: "İspanya La Liga", SP2: "İspanya La Liga 2", F1: "Fransa Ligue 1", F2: "Fransa Ligue 2", N1: "Hollanda Eredivisie",
     B1: "Belçika Pro Lig", P1: "Portekiz Liga", T1: "Türkiye Süper Lig", G1: "Yunanistan Süper Lig",
-    USA: "ABD MLS", SWE: "İsveç Allsvenskan", NOR: "Norveç Eliteserien", DNK: "Danimarka Superliga", FIN: "Finlandiya Veikkausliiga",
+    USA: "ABD MLS", SWE: "İsveç Allsvenskan", NOR: "Norveç Eliteserien", DNK: "Danimarka Superliga", FIN: "Finlandiya Veikkausliiga", BRA: "Brezilya Série A",
     CL: "Şampiyonlar Ligi", EL: "Avrupa Ligi", ECL: "Konferans Ligi", NBA: "NBA"
   };
   const ULKE = { E0: "ENG", E1: "ENG", E2: "ENG", E3: "ENG", EC: "ENG", SC0: "SCO", SC1: "SCO", SC2: "SCO", SC3: "SCO", D1: "GER", D2: "GER",
     I1: "ITA", I2: "ITA", SP1: "ESP", SP2: "ESP", F1: "FRA", F2: "FRA", N1: "NED", B1: "BEL", P1: "POR", T1: "TUR", G1: "GRE",
-    USA: "USA", SWE: "SWE", NOR: "NOR", DNK: "DNK", FIN: "FIN", CL: "EUR", EL: "EUR", ECL: "EUR" };
+    USA: "USA", SWE: "SWE", NOR: "NOR", DNK: "DNK", FIN: "FIN", BRA: "BRA", CL: "EUR", EL: "EUR", ECL: "EUR" };
   const SEVIYE = { E0: 1, E1: 2, E2: 3, E3: 4, EC: 5, SC0: 1, SC1: 2, SC2: 3, SC3: 4, D1: 1, D2: 2, I1: 1, I2: 2, SP1: 1, SP2: 2,
-    F1: 1, F2: 2, N1: 1, B1: 1, P1: 1, T1: 1, G1: 1, USA: 1, SWE: 1, NOR: 1, DNK: 1, FIN: 1, CL: 1, EL: 1, ECL: 1 };
+    F1: 1, F2: 2, N1: 1, B1: 1, P1: 1, T1: 1, G1: 1, USA: 1, SWE: 1, NOR: 1, DNK: 1, FIN: 1, BRA: 1, CL: 1, EL: 1, ECL: 1 };
   const KUPA = new Set(["CL", "EL", "ECL"]);
   const OK_AD = ["Bet365", "Piyasa ortalaması", "Pinnacle", "En yüksek oran", "Pinnacle (kapanış)", "Piyasa ortalaması (kapanış)", "Bahis şirketleri ortalaması"];
 
@@ -324,7 +324,7 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
   ];
   function sporKur(ad, pazarlar) {
     const PZ = {}; pazarlar.forEach((p, i) => PZ[p[0]] = { label: p[1], grup: p[2], i });
-    return { ad, PAZARLAR: pazarlar, PZ, P: pazarlar.length, TUM: [], GRUP: {}, FIK: [], ONEK: {}, HAVUZ: {}, SON_GUN: 0, ILK_GUN: 0, GECICI_SAY: 0 };
+    return { ad, PAZARLAR: pazarlar, PZ, P: pazarlar.length, TUM: [], GRUP: {}, FIK: [], BEK: [], ONEK: {}, HAVUZ: {}, SON_GUN: 0, ILK_GUN: 0, GECICI_SAY: 0 };
   }
   const SP = { futbol: sporKur("futbol", FUTBOL_PAZARLAR), nba: sporKur("nba", NBA_PAZARLAR) };
   const sporOf = m => m.lig === "NBA" ? SP.nba : SP.futbol;
@@ -368,7 +368,7 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     return sVektor(m);
   }
   const mKey = m => m.lig + "|" + m.gun + "|" + m.ev + "|" + m.dep;
-  let OLUSTURMA = null, ODDS_API = null, MODEL = null;
+  let OLUSTURMA = null, ODDS_API = null, MODEL = null, AYNI_GUN = false;
   // Yeni sürümün gol modeli değerleri (veri.json'da varsa): beklenen ev/dep golü, korner ve kart ortalaması
   const sayiMi = x => typeof x === "number" && isFinite(x);
   function mdlEkle(m, r, i) {
@@ -387,6 +387,9 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     F.GECICI_SAY = gec.length; gec.forEach(m => { F.TUM.push(m); var_.add(mKey(m)); });
     F.FIK = (V.f || []).map(r => mdlEkle(mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[5] / 100, r[6] / 100, r[7] / 100, o(r[8]), o(r[9]),
       null, null, null, null, false, r[10]), r, 11)).filter(m => !var_.has(mKey(m)));
+    F.BEK = (V.b || []).map(r => { const m = mdlEkle(mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[5] / 100, r[6] / 100, r[7] / 100, o(r[8]), o(r[9]),
+      null, null, null, null, false, r[10]), r, 11); m.bekliyor = true; return m; }).filter(m => !var_.has(mKey(m)));
+    AYNI_GUN = V.ayni_gun_sonuc === true;
     const nb = V.nba || { m: [], f: [] };
     N.TUM = nb.m.map(r => nbaMac(r[0], r[1], T[r[2]], T[r[3]], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], [r[4], r[5]]));
     N.FIK = nb.f.map(r => nbaMac(r[0], r[1], T[r[2]], T[r[3]], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], null));
@@ -709,7 +712,7 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
   }
   function listeHazirla() {
     const bas = isoGun($("f-bas").value), bit = isoGun($("f-bit").value);
-    const kaynak = gorunum === "g" ? C.FIK.filter(m => m.gun >= bugun) : C.TUM;
+    const kaynak = gorunum === "g" ? C.FIK.filter(m => m.gun >= bugun) : C.TUM.concat(C.BEK.filter(m => m.gun < bugun));
     const sec = kaynak.filter(m => (bas == null || m.gun >= bas) && (bit == null || m.gun <= bit));
     VIEW = sec.map(t => Object.assign({ t }, analizAl(t)));
     $("n-g").textContent = C.FIK.filter(m => m.gun >= bugun).length || "";
@@ -718,6 +721,9 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     fl.value = [...fl.options].some(o => o.value === s) ? s : "";
     const b = $("banner"), mesaj = [];
     if (gorunum === "p") mesaj.push("Geçmiş maçlarda her maç, sadece o maçtan önce oynanmış maçlarla analiz edilir. Sinyal etiketleri gerçek sonuca göre yeşil (tuttu) ya da kırmızı (tutmadı).");
+    const bek = gorunum === "p" ? VIEW.filter(v => v.t.bekliyor).length : 0;
+    if (bek) mesaj.push(bek + " maçın sonucu henüz kaynakta yok (\"sonuç bekleniyor\"); maç öncesi analizleri görünüyor. football-data.co.uk sonuçları genelde 1-4 gün içinde ekliyor" +
+      (AYNI_GUN ? "; büyük liglerde skor aynı gün football-data.org'dan geliyor." : ". Büyük liglerde aynı gün skor için football-data.org anahtarı eklenebilir (README'ye bakın)."));
     if (C.ad === "nba" && C.TUM.length < 300) mesaj.push("NBA geçmişi birikiyor: şu an " + binlik(C.TUM.length) + " maç var. Oranlar ve skorlar her gün kaydediliyor; benzer maç sayısı arttıkça analiz anlam kazanır.");
     b.hidden = !mesaj.length; b.textContent = mesaj.join(" ");
     ciz();
@@ -802,6 +808,7 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     const tt = el("span", "teams", f.ev + " – " + f.dep);
     if (f.ms) tt.append(el("span", "res", f.ms.join("-") + (f.iy ? " (İY " + f.iy.join("-") + ")" : "")));
     if (f.gecici) tt.append(el("span", "gec", "geçici"));
+    if (f.bekliyor) tt.append(el("span", "gec", "sonuç bekleniyor"));
     btn.append(tt, oranKutulari(f));
     const sp = seciliPazar();
     if (sp) {
@@ -859,7 +866,8 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
       return C.TUM.length ? "Seçili tarih aralığında maç yok." : "Henüz sonucu kaydedilmiş NBA maçı yok. Oynanan maçlar her gün eklenecek.";
     }
     if (gorunum === "g") return C.FIK.some(m => m.gun >= bugun) ? "Seçili tarih aralığında oranı açıklanmış maç yok." :
-      "Şu an oranı açıklanmış gelecek maç yok. football-data.co.uk hafta sonu maçlarını Cuma, hafta içi maçlarını Salı öğleden sonra yayınlıyor; kupalar ve ek ligler The Odds API'den günde bir kez gelir.";
+      "Şu an oranı açıklanmış gelecek maç yok. Kaynak (football-data.co.uk) hafta sonu maçlarını Cuma, hafta içi maçlarını Salı öğleden sonra yayınlıyor (Türkiye saatiyle genelde 16:00-20:00 arası); sayfa 15 dakikada bir kontrol ediyor, yayınlanınca maçlar kendiliğinden gelir." +
+      (ODDS_API && ODDS_API.aktif ? "" : " Daha erken oran için The Odds API anahtarı eklenebilir (README'ye bakın).");
     return "Seçili tarih aralığında maç yok.";
   }
   function ciz() {
@@ -1008,6 +1016,7 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     const tt = el("span", "teams", f.ev + " – " + f.dep);
     if (f.ms) tt.append(el("span", "res", f.ms.join("-") + (f.iy ? " (İY " + f.iy.join("-") + ")" : "")));
     if (f.gecici) tt.append(el("span", "gec", "geçici"));
+    if (f.bekliyor) tt.append(el("span", "gec", "sonuç bekleniyor"));
     btn.append(tt, oranKutulari(f), el("span", "pick-bos"));
     const ch = el("div", "chips"), gos = ucGoster(v);
     if (v.benzer.length < A.uc) ch.append(el("span", "chip none", "Yeterli benzer maç yok"));
@@ -1194,6 +1203,8 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     const kaynak = C.ad === "nba" ? "The Odds API" : "football-data.co.uk" + (ODDS_API && ODDS_API.aktif ? " + The Odds API" : "");
     const satir = [["Kaynak", kaynak], ["Geçmiş", binlik(C.TUM.length) + " maç"], ["Aralık", C.TUM.length ? kisaTarih(C.ILK_GUN) + " – " + kisaTarih(C.SON_GUN) : "–"], ["Gelecek", fs + " maç"]];
     if (C.GECICI_SAY) satir.push(["Geçici sonuç", C.GECICI_SAY + " maç"]);
+    if (C.BEK.length) satir.push(["Sonuç bekleyen", C.BEK.length + " maç"]);
+    if (C.ad === "futbol") satir.push(["Aynı gün skor", AYNI_GUN ? "açık (football-data.org)" : "kapalı"]);
     if (ODDS_API && ODDS_API.aktif && ODDS_API.kalan != null) satir.push(["The Odds API kalan kredi", String(ODDS_API.kalan)]);
     if (ODDS_API && ODDS_API.hata) satir.push(["The Odds API", "hata: " + ODDS_API.hata]);
     satir.forEach(([k, v]) => { const s = el("span"); s.append(k + ": ", el("b", null, v)); meta.append(s); });
@@ -1230,9 +1241,9 @@ caption { caption-side: top; text-align: left; font-family: var(--f-display); fo
     "Tahmini ihtimal = (geniş penceredeki tutan maç sayısı + 8 × lig ortalaması) ÷ (geniş penceredeki maç sayısı + 8). Geniş pencere, toleransın iki katı içindeki tüm benzer maçlardır (en yakın maçlar dahil). Lig ortalaması, maçın kendi liginin o tarihe kadarki tutma oranıdır (en az 30 maç varsa); az maç varsa tahmini ona doğru çeker. \"En yakın maçlar\" sütunu ise sadece en yakın maçlardaki sayıdır; sinyal buna göre verilir.",
     "Sinyal için en az tahmini ihtimal: en yakın maçların hepsi tutsa bile tahmini ihtimal bu sınırın altındaysa sinyal verilmez. Temmuz 2024 – Eylül 2026 testinde (22 Avrupa ligi, 15.406 maç) sınırsız sinyallerin %78'i, tahmini ihtimali %80 ve üzeri olanların %84'ü, %85 ve üzeri olanların %86'sı, %90 ve üzeri olanların %89'u tuttu. Tahmini ihtimali %60'ın altındaki sinyallerin ise ancak yarısı tuttu. Sınır yükseldikçe sinyal sayısı azalır.",
     "Benzer maçlarda ortak sonuç (yöntem sekmesi): maçın oranlarına en yakın 3 geçmiş maç alınır (sayısı 2-5 seçilebilir); hepsinde aynı olan sonuç (kesin skor, İY skoru, İY/MS, maç sonucu, gol aralığı, alt/üst, KG, handikap, korner, kart) tahmin sayılır. Alt/üst, korner, kart ve takım gollerinde maçların hepsini kapsayan en dar çizgiler verilir (ör. 3, 3 ve 4 gol: 2,5 Üst ve 4,5 Alt). İhtimal ve adil oran, maçın kendi oranlarından kurulan gol modelinden gelir. Temmuz 2024 – Eylül 2026 araştırmasında (22 Avrupa ligi, 15.406 maç) adil oranı 1,50 ve üzeri olan ortak sonuçların %50,9'u tuttu, model bunlara ortalama %50,5 ihtimal vermişti; benzer maç sayısını 2-10 arasında değiştirmek ya da lig sırasını benzerliğe katmak bu farkı büyütmedi. Yani bir tahminin tutma şansı onun ihtimalidir; değer, İddaa oranı adil orandan yüksek olduğunda vardır.",
-    "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). İddaa oranı değildir. Saatler Türkiye saatidir.",
+    "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS, Brezilya ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). İddaa oranı değildir. Saatler Türkiye saatidir.",
     "NBA: benzerlik galibiyet ihtimali ve toplam sayı çizgisine göre aranır. Handikap ve toplam pazarları her maçın kendi çizgisine göre değerlendirilir; çizgiye tam eşit sonuç iade sayılır. Maç sonucu uzatmalar dahildir.",
-    "Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, İskandinav ligleri ve kupalarda yok). Bu sayfa istatistiksel bir analizdir, bahis tavsiyesi değildir."
+    "Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, Brezilya, İskandinav ligleri ve kupalarda yok). Bu sayfa istatistiksel bir analizdir, bahis tavsiyesi değildir."
   ].forEach(t => $("foot").append(el("p", null, t)));
 
   { const ft = $("f-tur"); ft.append(new Option("Tümü", "")); UC_TUR.forEach(k => ft.append(new Option(k, k))); }

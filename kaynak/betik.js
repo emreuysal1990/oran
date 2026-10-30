@@ -8,7 +8,7 @@
     SC3: "İskoçya League Two", D1: "Almanya Bundesliga", D2: "Almanya 2. Bundesliga", I1: "İtalya Serie A", I2: "İtalya Serie B",
     SP1: "İspanya La Liga", SP2: "İspanya La Liga 2", F1: "Fransa Ligue 1", F2: "Fransa Ligue 2", N1: "Hollanda Eredivisie",
     B1: "Belçika Pro Lig", P1: "Portekiz Liga", T1: "Türkiye Süper Lig", G1: "Yunanistan Süper Lig",
-    USA: "ABD MLS", SWE: "İsveç Allsvenskan", NOR: "Norveç Eliteserien", DNK: "Danimarka Superliga", FIN: "Finlandiya Veikkausliiga",
+    USA: "ABD MLS", SWE: "İsveç Allsvenskan", NOR: "Norveç Eliteserien", DNK: "Danimarka Superliga", FIN: "Finlandiya Veikkausliiga", BRA: "Brezilya Série A",
     CL: "Şampiyonlar Ligi", EL: "Avrupa Ligi", ECL: "Konferans Ligi", NBA: "NBA", HES: "Hesaplayıcı"
   };
   const OK_AD = ["Bet365", "Piyasa ortalaması", "Pinnacle", "En yüksek oran", "Pinnacle (kapanış)", "Piyasa ortalaması (kapanış)", "Bahis şirketleri ortalaması"];
@@ -571,7 +571,7 @@
   [
     "Adil oran*: Modelin hesapladığı ihtimalin tersidir (1 ÷ ihtimal). Hiçbir bahis şirketinin oranı değildir. Bahis şirketlerinin oranları marj içerir; kendi oranını yazdığın pazarda \"değer\" artıysa o oran, modelin adil oranından yüksektir. Değer sütunu modelin doğruluğuna bağlıdır; model de en iyi ihtimalle piyasanın kendi bilgisi kadar doğrudur.",
     "Model: marjı çıkarılmış 1X2 ve 2,5 Alt/Üst ihtimallerine uyan beklenen ev ve deplasman golü bulunur; skorlar Poisson dağılımı, düşük skorlar için Dixon-Coles düzeltmesi ve 2+ farklı skorlar için hafif bir ağırlıkla modellenir. İlk yarı için gollerin yaklaşık %44,5'inin ilk yarıda atıldığı varsayılır. Korner ve kart: negatif binom dağılımı; takımların son 20 maçtaki attığı/yediği korner ve kart sayıları, ligin son 400 maçtaki seviyesi ve beklenen gol kullanılır. Katsayılar 1 Temmuz 2023'ten sonraki verilerle eğitilmiştir.",
-    "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). Saatler Türkiye saatidir. Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, İskandinav ligleri ve kupalarda korner/kart modeli yok).",
+    "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS, Brezilya ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). Saatler Türkiye saatidir. Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, Brezilya, İskandinav ligleri ve kupalarda korner/kart modeli yok).",
     "NBA: maç sonucu ihtimali oranlardan, toplam sayı çizgiden hesaplanır; fark ve takım sayıları normal dağılımla modellenir (fark için standart sapma 13, toplam için 18 sayı). Çizgiye tam eşit sonuç iade sayılır ve \"iade hariç\" ihtimal gösterilir.",
     "Bu sayfa istatistiksel bir araçtır, bahis tavsiyesi değildir. Eski sürüm: v1.html"
   ].forEach(t => $("foot").append(el("p", null, t)));

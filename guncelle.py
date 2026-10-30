@@ -42,16 +42,16 @@ LON, IST = ZoneInfo("Europe/London"), ZoneInfo("Europe/Istanbul")
 
 ANA_LIGLER = ["E0", "E1", "E2", "E3", "EC", "SC0", "SC1", "SC2", "SC3", "D1", "D2", "I1", "I2",
               "SP1", "SP2", "F1", "F2", "N1", "B1", "P1", "T1", "G1"]
-EK_LIGLER = ["USA", "SWE", "NOR", "DNK", "FIN"]          # football-data "new/<kod>.csv"
+EK_LIGLER = ["USA", "SWE", "NOR", "DNK", "FIN", "BRA"]          # football-data "new/<kod>.csv"
 KUPALAR = ["CL", "EL", "ECL"]
 LIGLER = ANA_LIGLER + EK_LIGLER + KUPALAR
 ODDS_SPOR = {"CL": "soccer_uefa_champs_league", "EL": "soccer_uefa_europa_league",
-             "ECL": "soccer_uefa_europa_conference_league", "USA": "soccer_usa_mls",
+             "ECL": "soccer_uefa_europa_conference_league", "USA": "soccer_usa_mls", "BRA": "soccer_brazil_campeonato",
              "SWE": "soccer_sweden_allsvenskan", "NOR": "soccer_norway_eliteserien",
              "DNK": "soccer_denmark_superliga", "FIN": "soccer_finland_veikkausliiga",
              "NBA": "basketball_nba"}
 SKORLU = {"CL", "EL", "ECL", "NBA"}   # sonucu başka kaynaktan gelmeyenler: skorlar The Odds API'den
-FDORG_LIG = {"PL": "E0", "ELC": "E1", "BL1": "D1", "SA": "I1", "PD": "SP1", "FL1": "F1", "DED": "N1", "PPL": "P1"}
+FDORG_LIG = {"PL": "E0", "ELC": "E1", "BL1": "D1", "SA": "I1", "PD": "SP1", "FL1": "F1", "DED": "N1", "PPL": "P1", "BSA": "BRA"}
 
 # Oran kaynağı kodları (sayfada etiket olarak gösterilir)
 OK_B365, OK_ORT, OK_PIN, OK_MAX, OK_PINK, OK_ORTK, OK_API = 0, 1, 2, 3, 4, 5, 6
@@ -79,18 +79,36 @@ def sezon_kodlari(n_gecmis, bugun):
     return [f"{(y - k) % 100:02d}{(y - k + 1) % 100:02d}" for k in range(n_gecmis, -1, -1)]
 
 
+BASLIKLAR = {}          # url -> {"etag", "lm"}: koşullu indirme için (onbellek/_basliklar.json)
+
+
 def indir(url, hedef, zorla, zorunlu=True):
     if os.path.exists(hedef) and not zorla:
         return True
+    bas = dict(UA)
+    eski = BASLIKLAR.get(url, {}) if os.path.exists(hedef) else {}
+    if eski.get("etag"):
+        bas["If-None-Match"] = eski["etag"]
+    if eski.get("lm"):
+        bas["If-Modified-Since"] = eski["lm"]
     for deneme in range(3 if zorunlu else 1):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as yanit:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=bas), timeout=90) as yanit:
                 veri = yanit.read()
+                BASLIKLAR[url] = {"etag": yanit.headers.get("ETag"), "lm": yanit.headers.get("Last-Modified")}
             with open(hedef + ".tmp", "wb") as f:
                 f.write(veri)
             os.replace(hedef + ".tmp", hedef)
             print(f"  indirildi: {url} ({len(veri) // 1024} KB)")
             return True
+        except urllib.error.HTTPError as e:
+            if e.code == 304:                                   # kaynakta değişiklik yok
+                os.utime(hedef)
+                print(f"  değişmemiş: {url}")
+                return True
+            print(f"  {'deneme ' + str(deneme + 1) + ' ' if zorunlu else ''}başarısız: {url} ({e})")
+            if zorunlu:
+                time.sleep(5 * (deneme + 1))
         except (urllib.error.URLError, OSError) as e:
             print(f"  {'deneme ' + str(deneme + 1) + ' ' if zorunlu else ''}başarısız: {url} ({e})")
             if zorunlu:
@@ -568,6 +586,8 @@ def main():
     bugun_no = gun_no(bugun)
     kodlar = sezon_kodlari(a.sezon, bugun)
     ilk_gun = gun_no(date(2000 + int(kodlar[0][:2]), 7, 1))
+    baslik_yol = os.path.join(a.onbellek, "_basliklar.json")
+    BASLIKLAR.update(json_oku(baslik_yol, {}))
     if not a.offline:
         for i, k in enumerate(kodlar):
             indir(f"{KAYNAK}/mmz4281/{k}/data.zip", os.path.join(a.onbellek, f"{k}.zip"), zorla=(i == len(kodlar) - 1))
@@ -577,6 +597,7 @@ def main():
             eski = not os.path.exists(yol) or time.time() - os.path.getmtime(yol) > 6 * 3600
             indir(f"{KAYNAK}/new/{lig}.csv", yol, zorla=eski)
         indir(f"{KAYNAK}/new_league_fixtures.csv", os.path.join(a.onbellek, "ek_fixtures.csv"), zorla=True, zorunlu=False)
+        json_yaz(baslik_yol, BASLIKLAR)
 
     # 1) Kesin sonuçlar: ana ligler
     maclar = {}
@@ -622,7 +643,7 @@ def main():
                 for r in csv_satirlari(f.read()):
                     m = oku(r, None, sonuclu=False)
                     if not m and (r.get("Div") or r.get("Country")):
-                        lig = {"USA": "USA", "Sweden": "SWE", "Norway": "NOR", "Denmark": "DNK", "Finland": "FIN"}.get(
+                        lig = {"USA": "USA", "Brazil": "BRA", "Sweden": "SWE", "Norway": "NOR", "Denmark": "DNK", "Finland": "FIN"}.get(
                             (r.get("Div") or r.get("Country") or "").strip())
                         if lig:
                             t = tarih_coz(r.get("Date"))
@@ -682,13 +703,15 @@ def main():
                if b["tur"] == "futbol" and utc(b["ts"]) > simdi_ts - timedelta(hours=2)]
     f_kaynak = [m for k, m in arsiv.items() if k not in maclar and k not in gecici and m["gun"] >= bugun_no]
     f_kay = sirala(f_kaynak + api_fik)
+    # oynanmış, sonucu football-data.co.uk'a henüz eklenmemiş maçlar (maç öncesi oranlarıyla; sonuç gelince "m"ye geçer)
+    b_kay = sirala([m for k, m in arsiv.items() if k not in maclar and k not in gecici and bugun_no - 7 <= m["gun"] < bugun_no])
 
     # Model: her maç için oranlardan beklenen gol (+ korner ve kart ortalaması). Sayfa tüm pazarları bunlardan hesaplar.
     kat = json_oku(os.path.join(KOK, "katsayilar.json"), None)
     model_var, n_mdl, model_hata = False, 0, None
     if kat:
         try:
-            n_mdl = model_ekle(kat, m_kay, g_kay, f_kay)
+            n_mdl = model_ekle(kat, m_kay, g_kay, f_kay + b_kay)
             model_var = True
             print(f"  model: {n_mdl} maç için beklenen gol / korner / kart hesaplandı")
         except Exception as e:  # noqa  -- model çökse bile veri akışı sürsün
@@ -718,6 +741,7 @@ def main():
     m_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] + mdl_gecmis(m) for m in m_kay]
     g_liste = [bas_alanlar(m) + m["sonuc"] + m["oran"] + [m["ok"]] + mdl_gecmis(m) for m in g_kay]
     f_liste = [bas_alanlar(m) + m["oran"] + [m["ok"]] + mdl_fikstur(m) for m in f_kay]
+    b_liste = [bas_alanlar(m) + m["oran"] + [m["ok"]] + mdl_fikstur(m) for m in b_kay]
     nba_m = [[b["gun"], b["saat"], t(b["ev"]), t(b["dep"])] + b["skor"] + b["oran"]
              for b in sirala([b for b in birikim["sonuclu"].values() if b["tur"] == "nba"])]
     nba_f = [[b["gun"], b["saat"], t(b["ev"]), t(b["dep"])] + b["oran"]
@@ -729,7 +753,8 @@ def main():
         "kaynak": "football-data.co.uk",
         "lig": LIGLER,
         "takim": [ad for ad, _ in sorted(takim.items(), key=lambda x: x[1])],
-        "m": m_liste, "g": g_liste, "f": f_liste,
+        "m": m_liste, "g": g_liste, "f": f_liste, "b": b_liste,
+        "ayni_gun_sonuc": bool(token or a.fdorg_dosya),
         "nba": {"m": nba_m, "f": nba_f},
         "odds_api": {"aktif": api.aktif(), "kalan": durum.get("kalan"), "hata": durum.get("hata")},
         "gecici_kaynak": "football-data.org" if g_liste else None,
@@ -741,7 +766,8 @@ def main():
     json_yaz(os.path.join(a.birikim, "bekleyen.json"), birikim["bekleyen"])
     json_yaz(os.path.join(a.birikim, "sonuclu.json"), birikim["sonuclu"])
     lig_say = Counter(LIGLER[r[0]] for r in m_liste)
-    durum["ozet"] = {"mac": len(m_liste), "gecici": len(g_liste), "fikstur": len(f_liste), "nba_mac": len(nba_m),
+    durum["ozet"] = {"mac": len(m_liste), "gecici": len(g_liste), "fikstur": len(f_liste), "sonuc_bekleyen": len(b_liste),
+                     "ayni_gun_sonuc_anahtari": bool(token), "nba_mac": len(nba_m),
                      "nba_fikstur": len(nba_f), "son_mac_gunu": max(r[1] for r in m_liste),
                      "lig": dict(sorted(lig_say.items())), "odds_api_aktif": api.aktif(),
                      # model denetimi: kaç maça beklenen gol / korner / kart yazıldı (günlüğe bakmadan kontrol için)
@@ -751,7 +777,7 @@ def main():
                                "fikstur_korner": sum(1 for r in f_liste if r[13] is not None), "fikstur_kart": sum(1 for r in f_liste if r[14] is not None),
                                "fikstur_lig": fikstur_lig_ozeti(f_kay)}}
     json_yaz(os.path.join(a.birikim, "durum.json"), durum)
-    print(f"{len(m_liste)} maç, {len(g_liste)} geçici, {len(f_liste)} gelecek futbol maçı, "
+    print(f"{len(m_liste)} maç, {len(g_liste)} geçici, {len(f_liste)} gelecek futbol maçı, {len(b_liste)} sonuç bekleyen, "
           f"{len(nba_m)} NBA maçı, {len(nba_f)} gelecek NBA maçı → {a.cikti}")
 
 
