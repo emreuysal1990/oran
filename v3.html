@@ -88,7 +88,7 @@ main { max-width: 1080px; margin: 0 auto; padding: 16px max(16px, env(safe-area-
 .gun { display: grid; gap: 8px; }
 .gun h2 { margin: 6px 2px 0; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .gun h2 .say { font-family: var(--m); font-weight: 600; text-transform: none; letter-spacing: 0; }
-#oneri-hizli { flex-wrap: wrap; overflow: visible; }
+#oneri-hizli, #g5-esik { flex-wrap: wrap; overflow: visible; }
 tr.alt-satir td { color: var(--muted); }
 tr.alt-satir td:first-child { padding-left: 24px; }
 .kart { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
@@ -171,9 +171,22 @@ tr.soluk td { color: var(--muted); }
 .iddaa input { width: 74px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; background: var(--surface); font-family: var(--m); font-size: 13px; text-align: right; }
 .btn-ana { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 800; border-radius: 12px; padding: 12px 16px; cursor: pointer; }
 
+.gun-nav { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; align-items: center; }
+.ok-btn { height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 22px; line-height: 1; cursor: pointer; }
+.ok-btn[disabled] { opacity: .35; cursor: default; }
+.gun-ad { text-align: center; font-weight: 800; font-size: 15px; }
+.gun-ad small { display: block; font-weight: 600; font-size: 12px; color: var(--muted); }
+.sira { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--bg); font-family: var(--m); font-size: 12px; font-weight: 700; }
+.kupon { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.kupon b { font-family: var(--m); font-size: 1.15rem; }
+.dagilim { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: end; height: 92px; }
+.dagilim div { display: grid; grid-template-rows: 1fr auto auto; gap: 2px; text-align: center; height: 100%; }
+.dagilim i { align-self: end; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.dagilim span { font-family: var(--m); font-size: 11px; color: var(--muted); }
+.dagilim b { font-family: var(--m); font-size: 12px; }
 @media (max-width: 720px) {
   .sekmeler { display: none; }
-  .alt-nav { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line);
+  .alt-nav { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--surface); border-top: 1px solid var(--line);
     padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
   .alt-nav button { border: 0; background: none; height: var(--nav-h); display: grid; place-content: center; gap: 2px; font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer; }
   .alt-nav button::before { content: ""; width: 22px; height: 4px; border-radius: 2px; margin: 0 auto 4px; background: transparent; }
@@ -196,6 +209,7 @@ tr.soluk td { color: var(--muted); }
     <button class="ikon-btn" type="button" id="guncelle">Güncelle</button>
   </div>
   <nav class="sekmeler" role="tablist" aria-label="Bölümler" id="sekmeler">
+    <button type="button" role="tab" data-s="gun5" aria-selected="false">Günün 5'i</button>
     <button type="button" role="tab" data-s="oneri" aria-selected="true">Öneriler<span id="say-oneri"></span></button>
     <button type="button" role="tab" data-s="mac" aria-selected="false">Maçlar<span id="say-mac"></span></button>
     <button type="button" role="tab" data-s="gecmis" aria-selected="false">Geçmiş</button>
@@ -204,6 +218,19 @@ tr.soluk td { color: var(--muted); }
 </header>
 
 <main id="ana">
+  <!-- GÜNÜN 5'İ -->
+  <section id="s-gun5" class="gorunum" aria-label="Günün 5'i" hidden>
+    <div class="baslik"><h1>Günün 5'i</h1><p id="g5-alt"></p></div>
+    <div class="gun-nav">
+      <button type="button" class="ok-btn" id="g5-geri" aria-label="Önceki gün">‹</button>
+      <div class="gun-ad" id="g5-gun"></div>
+      <button type="button" class="ok-btn" id="g5-ileri" aria-label="Sonraki gün">›</button>
+    </div>
+    <div class="cipler" id="g5-esik" role="group" aria-label="En az tahmini İddaa oranı"></div>
+    <div id="g5-liste"></div>
+    <div class="ozet" id="g5-karne"></div>
+  </section>
+
   <!-- ÖNERİLER -->
   <section id="s-oneri" class="gorunum" aria-label="Öneriler">
     <div class="baslik"><h1>Öneriler</h1><p id="oneri-alt"></p></div>
@@ -238,6 +265,7 @@ tr.soluk td { color: var(--muted); }
 </main>
 
 <nav class="alt-nav" role="tablist" aria-label="Bölümler" id="alt-nav">
+  <button type="button" role="tab" data-s="gun5" aria-selected="false">Günün 5'i</button>
   <button type="button" role="tab" data-s="oneri" aria-selected="true">Öneriler</button>
   <button type="button" role="tab" data-s="mac" aria-selected="false">Maçlar</button>
   <button type="button" role="tab" data-s="gecmis" aria-selected="false">Geçmiş</button>
@@ -288,12 +316,13 @@ tr.soluk td { color: var(--muted); }
   // Tahmini İddaa oranı = adil oran ÷ 1,19 (gerçek İddaa oranı değildir).
   const IDDAA_MARJ = 1.19;
   const iddaaOran = p => p > 0 ? Math.max(1.01, 1 / (p * IDDAA_MARJ)) : null;
-  const VARS = { v: 2, minP: 0.60, minOran: 1.20, oranTur: "iddaa", gruplar: null, destek: false, enFazla: 2, gun: "tum" };
+  const VARS = { v: 2, minP: 0.60, minOran: 1.20, oranTur: "iddaa", gruplar: null, destek: false, enFazla: 2, gun: "tum", g5esik: 1.3 };
   const kayitli = al("ob3-ayar", {});
   if (kayitli && kayitli.v !== 2) { delete kayitli.minP; delete kayitli.oranTur; }   // eski ayar: yeni varsayılanlar (İddaa oranı, %60)
   const A = Object.assign({}, VARS, kayitli); A.v = 2;
   if (![0.55, 0.6, 0.65, 0.7, 0.75, 0.8].includes(A.minP)) A.minP = VARS.minP;
   if (!["iddaa", "adil"].includes(A.oranTur)) A.oranTur = VARS.oranTur;
+  if (![1.2, 1.3, 1.4, 1.5].includes(A.g5esik)) A.g5esik = VARS.g5esik;
   if (![1.2, 1.3, 1.4, 1.5].includes(A.minOran)) A.minOran = VARS.minOran;
   if (![1, 2, 3, 99].includes(A.enFazla)) A.enFazla = VARS.enFazla;
   if (!["bugun", "yarin", "tum"].includes(A.gun)) A.gun = "tum";
@@ -505,6 +534,78 @@ tr.soluk td { color: var(--muted); }
     return k;
   }
   function gunGrubu(g, sagMetin) { const d = el("section", "gun"); const h = el("h2"); h.append(el("span", null, gunAd(g))); if (sagMetin) h.append(el("span", "say", sagMetin)); d.append(h); return d; }
+
+  // ============================================================ GÜNÜN 5'İ (oneri.py gunun5_sec ile aynı kural)
+  let G5_GUN = BUGUN;
+  function gunun5(g) {
+    const ust = 1 / (A.g5esik * IDDAA_MARJ) + 1e-9, sec = [];
+    const maclar = GECMIS.filter(m => m.gun === g).concat(BEKLEYEN.filter(m => m.gun === g), GELECEK.filter(m => m.gun === g));
+    for (const m of maclar) {
+      const ad = oneriAl(m).filter(o => o.p <= ust).sort((a, b) => b.beklenen - a.beklenen || b.p - a.p || a.j - b.j);
+      if (ad.length) sec.push({ m, o: ad[0] });
+    }
+    sec.sort((a, b) => b.o.beklenen - a.o.beklenen || b.o.p - a.o.p || (a.m.key < b.m.key ? -1 : a.m.key > b.m.key ? 1 : 0));
+    return sec.slice(0, 5);
+  }
+  function g5Sinirlar() {
+    const son = Math.max(BUGUN, ...GELECEK.map(m => m.gun));
+    return [BUGUN - 14, son];
+  }
+  function gunun5Ciz() {
+    const [ilk, son] = g5Sinirlar();
+    G5_GUN = Math.min(Math.max(G5_GUN, ilk), son);
+    $("g5-geri").disabled = G5_GUN <= ilk; $("g5-ileri").disabled = G5_GUN >= son;
+    const ga = $("g5-gun"); ga.textContent = ""; ga.append(gunAd(G5_GUN));
+    ga.append(el("small", null, G5_GUN < BUGUN ? "geçmiş gün · sonuçlarıyla" : G5_GUN === BUGUN ? "bugün" : "gelecek gün · maç öncesi"));
+    $("g5-alt").textContent = "Tahmini İddaa oranı en az " + v2(A.g5esik) + " olan, sistemin en güvendiği 5 tahmin (5 ayrı maç)";
+    const ec = $("g5-esik"); ec.textContent = "";
+    [1.2, 1.3, 1.4, 1.5].forEach(v => { const c = el("button", "cip", "İddaa ≥ " + v2(v)); c.type = "button"; c.setAttribute("aria-pressed", String(A.g5esik === v));
+      c.addEventListener("click", () => { A.g5esik = v; ayarYaz(); gunun5Ciz(); }); ec.append(c); });
+    const kap = $("g5-liste"); kap.textContent = "";
+    const sec = gunun5(G5_GUN), gecmis = G5_GUN < BUGUN || sec.some(x => x.m.ms || x.m.bekliyor);
+    if (!sec.length) {
+      kap.append(el("div", "bos", G5_GUN >= BUGUN && !GELECEK.some(m => m.gun === G5_GUN)
+        ? "Bu gün için oranı açıklanmış maç yok. Kaynak hafta sonu maçlarını Cuma, hafta içi maçlarını Salı öğleden sonra yayınlıyor."
+        : "Bu gün için bu eşiğe uyan tahmin yok."));
+    } else {
+      const l = el("div", "gun");
+      sec.forEach((x, i) => {
+        const k = macKarti(x.m, [x.o], gecmis, null);
+        const ust = k.querySelector(".mac-ust"); ust.prepend(el("span", "sira", String(i + 1)));
+        l.append(k);
+      });
+      kap.append(l);
+      // kupon
+      const oran = sec.reduce((a, x) => a * iddaaOran(x.o.p), 1), ihtimal = sec.reduce((a, x) => a * x.o.beklenen, 1);
+      const sonuclar = sec.map(x => sonuc(x.o.kod, x.m)), bilinen = sonuclar.filter(r => r != null), tutan = bilinen.filter(r => r).length;
+      const ku = el("div", "ozet"), sat = el("div", "kupon");
+      sat.append(el("span", null, sec.length + "'li kupon: tahmini İddaa oranı"), el("b", null, v2(oran)), el("span", null, "hepsinin tutma ihtimali"), el("b", null, yz1(ihtimal)));
+      ku.append(sat);
+      if (bilinen.length) ku.append(el("p", null, "Bu gün: " + tutan + "/" + bilinen.length + " tuttu" + (bilinen.length < sec.length ? " (" + (sec.length - bilinen.length) + " maçın sonucu bekleniyor)" : "") +
+        (bilinen.length === sec.length ? (tutan === sec.length ? " · kupon tuttu." : " · kupon tutmadı.") : ".")));
+      ku.append(el("p", null, "Oranlar tahminidir (adil oran ÷ 1,19). Gerçek İddaa oranlarını maçın ayrıntısına yazarsan değer görünür."));
+      kap.append(ku);
+    }
+    // karne
+    const kr = $("g5-karne"); kr.textContent = "";
+    const K = ONERI && ONERI.gunun5 && ONERI.gunun5.karne[A.g5esik.toFixed(2)];
+    if (!K || !K.tum || !K.tum.n) { kr.append(el("p", null, "Geçmiş karne henüz hesaplanmadı.")); return; }
+    const T = K.tum, C = K.canli, dg = T.dagilim, kg = T.kupon_gun || 1;
+    const ortTutan = dg.reduce((a, c, k) => a + k * c, 0) / kg;
+    const ust = el("div", "ozet-ust");
+    const kpi = (b, s2) => { const k = el("div", "kpi"); k.append(el("b", null, b), el("small", null, s2)); return k; };
+    ust.append(kpi(ortTutan.toFixed(1).replace(".", ",") + " / 5", "günde ortalama tutan"), kpi(yz1(T.h / T.n), "tahminlerin tuttu"), kpi(yz1(T.kupon_tuttu / kg), "günlerde 5'te 5"));
+    kr.append(el("h3", null, "Bu kuralın geçmişi"), ust);
+    const d = el("div", "dagilim"), mx = Math.max(...dg, 1);
+    dg.forEach((c, k) => { const s2 = el("div"); const bar = el("i"); bar.style.height = Math.round(c / mx * 60) + "px"; s2.append(bar, el("b", null, yz(c / kg)), el("span", null, k + "/5")); d.append(s2); });
+    kr.append(d);
+    kr.append(el("p", null, "2024-25'ten beri " + binlik(T.gun) + " günde aynı kural her gün uygulandı (her maç yalnızca kendinden önceki bilgiyle): " + binlik(T.n) + " tahminin " + yz1(T.h / T.n) +
+      "'i tuttu, model " + yz1(T.p / T.n) + " demişti. Çubuklar, 5 tahminin kaçının tuttuğuna göre günlerin dağılımı. 5'li kuponun tahmini İddaa oranı ortalama " + v2(T.kupon_oran_ort) + "." +
+      (C && C.n ? " Model eğitildikten sonraki " + C.gun + " günde: " + yz1(C.h / C.n) + " tuttu, " + C.kupon_tuttu + " gün 5'te 5." : "")));
+    kr.append(el("p", "not", "Kupon notu: 5'li kuponun tutma ihtimali her tahminin ihtimallerinin çarpımıdır; İddaa her tahminden %19 pay aldığı için tahmini oranlarla oynanan 5'li kupon uzun vadede yatırılanın yaklaşık yarısını kaybettirir."));
+  }
+  $("g5-geri").addEventListener("click", () => { G5_GUN--; gunun5Ciz(); window.scrollTo(0, 0); });
+  $("g5-ileri").addEventListener("click", () => { G5_GUN++; gunun5Ciz(); window.scrollTo(0, 0); });
 
   // ============================================================ ÖNERİLER
   function gunAraligi() {
@@ -777,11 +878,11 @@ tr.soluk td { color: var(--muted); }
   }
 
   // ============================================================ sekmeler, çizim, güncelleme
-  let SEKME = al("ob3-sekme", "oneri"); if (!["oneri", "mac", "gecmis", "perf"].includes(SEKME)) SEKME = "oneri";
+  let SEKME = al("ob3-sekme", "gun5"); if (!["gun5", "oneri", "mac", "gecmis", "perf"].includes(SEKME)) SEKME = "gun5";
   function sekmeSec(s) {
     SEKME = s; yaz("ob3-sekme", s);
     document.querySelectorAll("[data-s]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.s === s)));
-    ["oneri", "mac", "gecmis", "perf"].forEach(k => { $("s-" + k).hidden = k !== s; });
+    ["gun5", "oneri", "mac", "gecmis", "perf"].forEach(k => { $("s-" + k).hidden = k !== s; });
     hepsiniCiz(); window.scrollTo(0, 0);
   }
   document.querySelectorAll("[data-s]").forEach(b => b.addEventListener("click", () => sekmeSec(b.dataset.s)));
@@ -790,7 +891,7 @@ tr.soluk td { color: var(--muted); }
     if (!VERI) return;
     $("say-oneri").textContent = GELECEK.filter(m => m.gun >= BUGUN && secilenler(m).length).length || "";
     $("say-mac").textContent = GELECEK.filter(m => m.gun >= BUGUN).length || "";
-    if (SEKME === "oneri") onerilerCiz(); else if (SEKME === "mac") maclarCiz(); else if (SEKME === "gecmis") gecmisCiz(); else perfCiz();
+    if (SEKME === "gun5") gunun5Ciz(); else if (SEKME === "oneri") onerilerCiz(); else if (SEKME === "mac") maclarCiz(); else if (SEKME === "gecmis") gecmisCiz(); else perfCiz();
   }
   function durumCiz() {
     const d = $("durum"); d.textContent = "";

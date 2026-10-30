@@ -24,6 +24,8 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 3. **Öneri:** gösterilen ihtimal sayfada seçilen sınırın üstünde ve oran en az 1,20. Oran sınırı varsayılan olarak **tahmini İddaa oranına** uygulanır (Ayarlar'dan adil orana çevrilebilir).
 4. **Tahmini İddaa oranı** = adil oran ÷ 1,19. İddaa'nın marjı, örnek maçlarda MS, 2,5 Alt/Üst ve KG pazarlarının hepsinde %18-19 çıktı. Gerçek İddaa oranı değildir; gerçek oranı maç ayrıntısına yazınca değer hesaplanır.
 
+**Günün 5'i:** her gün, o günün maçlarından tahmini İddaa oranı en az 1,30 (1,20 / 1,40 / 1,50 seçilebilir) olan en güçlü 5 tahmin, 5 ayrı maçtan (her maçta beklenen tutması en yüksek uygun pazar; sonra maçlar bu değere göre sıralanır). Sayfada son 14 gün sonuçlarıyla, gelecek günler maç öncesi görünür. Aynı kural 2024-25'ten beri her gün uygulandığında (1,30 eşiği): 734 gün, 2.986 tahminin %64,4'ü tuttu (model %64,0); günde ortalama 3,2 / 5; 5'te 5 günlerin %12,8'i; 5'li kuponun tahmini İddaa oranı ortalama 3,84.
+
 Varsayılan ayarla (ihtimal en az %60, tahmini İddaa oranı en az 1,20; yani ihtimal %60-70): 2024-25'ten beri 127.056 öneri, %65,3 tuttu (model %65,2); eğitimden sonraki maçlarda %65,2. Bu aralıkta destekli öneriler modelden 2 puan daha sık tuttu.
 
 Öneriler ve geçmiş performans her güncellemede `guncelle.py` içinde hesaplanır ve `veri.json`'daki `oneri` bölümüne yazılır.

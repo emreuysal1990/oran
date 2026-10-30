@@ -49,6 +49,9 @@ YAKIN = 10                 # en yakın kaç maç
 DESTEK_EN_AZ_MAC = 8       # destek için en az bu kadar sonucu bilinen benzer maç
 DESTEK_ORAN = 0.9          # ... ve en az %90'ında tutmuş olmalı
 DESTEK_EK = 0.01           # destekli önerilerin beklenen tutmasına eklenen pay (araştırma: +0,5 / +1,2 puan)
+IDDAA_MARJ = 1.19          # tahmini İddaa oranı = adil oran / 1,19 (örnek maçlarda MS, Alt/Üst, KG marjı %18-19)
+GUNUN5_ESIK = [1.2, 1.3, 1.4, 1.5]   # "Günün 5'i": tahmini İddaa oranı en az bu kadar
+GUNUN5_ADET = 5
 
 _K = np.arange(mk.G)
 _LF = np.array([math.lgamma(k + 1) for k in range(mk.G)])
@@ -213,4 +216,62 @@ def performans(P, Y, N, H, gunler, donemler):
             s = sat.setdefault(k, [0, 0, 0.0])
             s[0] += 1; s[1] += int(Y[i, j]); s[2] += float(P[i, j])
         out[ad] = [[a, b, c, s[0], s[1], round(s[2], 2)] for (a, b, c), s in sorted(sat.items())]
+    return out
+
+
+def gunun5_sec(p, destek, gecerli):
+    """
+    Bir günün maçlarından "Günün 5'i": her maçta, geçerli pazarlar içinde beklenen tutması en yüksek olan (ihtimal + destek payı);
+    sonra maçlar bu değere göre sıralanır, ilk 5 alınır. p: (maç, pazar) ihtimal (binde bire yuvarlanmış), destek: bool, gecerli: bool.
+    Dönüş: [(maç sırası, pazar sırası), ...]. Sayfa aynı kuralı aynı sırayla uygular (eşitlikte ihtimal, sonra maç anahtarı).
+    """
+    bek = np.where(gecerli, p + np.where(destek, DESTEK_EK, 0.0), -1.0)
+    secim = []
+    for i in range(p.shape[0]):
+        if not gecerli[i].any():
+            continue
+        js = np.where(gecerli[i])[0]
+        j = js[np.lexsort((js, -p[i, js], -bek[i, js]))][0]
+        secim.append((float(bek[i, j]), float(p[i, j]), i, int(j)))
+    return secim
+
+
+def gunun5_karne(P, N, H, Y, gunler, anahtarlar, donemler):
+    """Kuralın geçmişte her gün uygulanmış hâli: eşik ve dönem başına özet (günler, tahminler, tutan, dağılım, 5'li kupon)."""
+    pr = np.round(np.where(np.isfinite(P), P, -1.0) * 1000) / 1000
+    des = destekli(N, H)
+    taban = np.isfinite(P) & (pr >= TABAN_IHTIMAL)
+    out = {}
+    gun_listesi = sorted(set(gunler.tolist()))
+    idx_gun = {g: np.where(gunler == g)[0] for g in gun_listesi}
+    for esik in GUNUN5_ESIK:
+        gecerli_tum = taban & (pr <= 1 / (esik * IDDAA_MARJ) + 1e-9)
+        sonuc_gun = []        # (gün, [ (tuttu or None, p, oran) ...])
+        for g in gun_listesi:
+            ii = idx_gun[g]
+            sec = gunun5_sec(pr[ii], des[ii], gecerli_tum[ii])
+            sec.sort(key=lambda x: (-x[0], -x[1], anahtarlar[ii[x[2]]]))
+            sec = sec[:GUNUN5_ADET]
+            if not sec:
+                continue
+            sat = []
+            for b, p_, i_, j in sec:
+                y = Y[ii[i_], j]
+                sat.append((None if not np.isfinite(y) else bool(y), p_, max(1.01, 1 / (p_ * IDDAA_MARJ))))
+            sonuc_gun.append((g, sat))
+        d_out = {}
+        for ad, (bas, bit) in donemler.items():
+            gunler_d = [(g, s_) for g, s_ in sonuc_gun if bas <= g < bit]
+            n = h = 0; ps = 0.0; dag = [0] * (GUNUN5_ADET + 1); kupon_n = kupon_h = 0; kupon_oran = 0.0
+            for g, s_ in gunler_d:
+                for t, p_, o in s_:
+                    if t is None:
+                        continue
+                    n += 1; h += int(t); ps += p_
+                if len(s_) == GUNUN5_ADET and all(t is not None for t, _, _ in s_):
+                    k = sum(int(t) for t, _, _ in s_); dag[k] += 1; kupon_n += 1; kupon_h += int(k == GUNUN5_ADET)
+                    kupon_oran += float(np.prod([o for _, _, o in s_]))
+            d_out[ad] = {"gun": len(gunler_d), "n": n, "h": h, "p": round(ps, 2), "dagilim": dag, "kupon_gun": kupon_n,
+                         "kupon_tuttu": kupon_h, "kupon_oran_ort": round(kupon_oran / kupon_n, 2) if kupon_n else None}
+        out[f"{esik:.2f}"] = d_out
     return out

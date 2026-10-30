@@ -581,6 +581,8 @@ def oneri_ekle(kat, m_kay, g_kay, b_kay, f_kay, bugun_no):
     egitim_bitis = gun_no(date.fromisoformat(kat["egitim_bitis"])) if kat.get("egitim_bitis") else bugun_no
     donem = {"tum": (perf_bas, 10 ** 7), "canli": (egitim_bitis + 1, 10 ** 7), "son30": (bugun_no - 30, 10 ** 7)}
     perf = oneri.performans(P, Y, N, H, gunler, donem)
+    anahtarlar = [f'{m["lig"]}|{m["gun"]}|{m["ev"]}|{m["dep"]}' for m in hedef]
+    gunun5 = oneri.gunun5_karne(P, N, H, Y, gunler, anahtarlar, donem)
     liste = oneri.oneriler(P, N, H)
     mac = {}
     for m, o in zip(hedef, liste):
@@ -590,7 +592,8 @@ def oneri_ekle(kat, m_kay, g_kay, b_kay, f_kay, bugun_no):
             "esik": {"en_az_adil": oneri.EN_AZ_ADIL, "taban": oneri.TABAN_IHTIMAL, "destek_mac": oneri.DESTEK_EN_AZ_MAC,
                      "destek_oran": oneri.DESTEK_ORAN, "destek_ek": oneri.DESTEK_EK, "yakin": oneri.YAKIN, "tol": oneri.TOL},
             "donem": {k: [a, None if b >= 10 ** 7 else b] for k, (a, b) in donem.items()},
-            "mac": mac, "perf": perf}
+            "mac": mac, "perf": perf,
+            "gunun5": {"esikler": oneri.GUNUN5_ESIK, "adet": oneri.GUNUN5_ADET, "marj": oneri.IDDAA_MARJ, "karne": gunun5}}
 
 
 def fikstur_lig_ozeti(f_kay):
