@@ -24,15 +24,26 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 3. **Öneri:** gösterilen ihtimal sayfada seçilen sınırın üstünde ve oran en az 1,20. Oran sınırı varsayılan olarak **tahmini İddaa oranına** uygulanır (Ayarlar'dan adil orana çevrilebilir).
 4. **Tahmini İddaa oranı** = adil oran ÷ 1,19. İddaa'nın marjı, örnek maçlarda MS, 2,5 Alt/Üst ve KG pazarlarının hepsinde %18-19 çıktı. Gerçek İddaa oranı değildir; gerçek oranı maç ayrıntısına yazınca değer hesaplanır.
 
-**Günün 5'i:** her gün, o günün maçlarından tahmini İddaa oranı en az 1,30 (1,20 / 1,40 / 1,50 seçilebilir) olan en güçlü 5 tahmin, 5 ayrı maçtan (her maçta beklenen tutması en yüksek uygun pazar; sonra maçlar bu değere göre sıralanır). Sayfada son 14 gün sonuçlarıyla, gelecek günler maç öncesi görünür. Aynı kural 2024-25'ten beri her gün uygulandığında (1,30 eşiği): 734 gün, 2.986 tahminin %64,4'ü tuttu (model %64,0); günde ortalama 3,2 / 5; 5'te 5 günlerin %12,8'i; 5'li kuponun tahmini İddaa oranı ortalama 3,84.
+**Günün tahminleri** (sabit 5 yerine, sistemin güvendiği kadar): her maçta tahmini İddaa oranı seçilen eşiğin (1,20 / 1,30 / 1,40 / 1,50) üstünde kalan pazarlar arasından beklenen tutması en yüksek olan alınır; beklenen tutması o oranın izin verdiği en yüksek ihtimale yakınsa (güven payı içinde) listeye girer. O gün kaç maç bu şartı sağlıyorsa o kadar tahmin çıkar; hiçbiri sağlamıyorsa o gün tahmin yoktur. Sayfada son 14 gün sonuçlarıyla, gelecek günler maç öncesi görünür.
 
-Kupon büyüklüğü seçilebilir (ilk 1-5 tahmin). 1,30 eşiğinde geçmişte "hepsi tuttu" oranı: tek maç %64, 2'li %41, 3'lü %28, 4'lü %18, 5'li %13 (tahmini İddaa oranı 1,30 / 1,70 / 2,23 / 2,92 / 3,84). İddaa'nın %19 marjı yüzünden tahmini oranlarla her kupon uzun vadede kaybettirir; kupon büyüdükçe kayıp büyür.
+Güven seviyeleri: **Yüksek** (en yüksek ihtimale 0,5 puan kadar yakın), **Orta** (2 puan), **Geniş** (4 puan; ihtimal hiçbir zaman %55'in altına inmez). Aynı kural 2024-25'ten beri her gün uygulandığında (734 gün, her maç yalnızca kendinden önceki bilgiyle):
+
+| İddaa eşiği | Güven | Günde tahmin | Tuttu (beklenen) | Boş gün | Model eğitiminden sonra |
+|---|---|---|---|---|---|
+| 1,20 | Yüksek | 10,3 | %70,8 (%69,7) | %12 | günde 10,1 · %67,0 |
+| 1,30 | Yüksek | 8,5 | %64,6 (%64,3) | %16 | günde 9,0 · %64,6 |
+| 1,30 | Orta | 21,0 | %63,8 (%63,8) | %4 | günde 23,3 · %64,2 |
+| 1,30 | Geniş | 26,6 | %63,6 (%63,4) | %1 | günde 29,6 · %64,0 |
+| 1,40 | Yüksek | 7,5 | %60,0 (%59,8) | %17 | günde 8,8 · %59,7 |
+| 1,50 | Yüksek | 7,4 | %56,1 (%55,8) | %19 | günde 9,1 · %56,6 |
+
+Bir tahmine duyulan güven, oranının izin verdiğinden fazla olamaz (tahmini İddaa 1,30 ≈ en çok %65). Bu yüzden tahmin sayısı gün gün değişir ama her tahmin yaklaşık beklenen oranda tutar. Tahminleri tek tek değerlendirmek kupondan çok daha az risklidir: 1,30'luk tahminlerden 5'inin birden tutma ihtimali yaklaşık %11'dir. İddaa'nın %19 marjı yüzünden tahmini oranlarla oynanan her bahis ve kupon uzun vadede kaybettirir (`arastirma/f_guven.py`).
 
 **Oranlardan bağımsız formüller de denendi** (`arastirma/f_bagimsiz_*.py`, `arastirma/f_g5_varyant.py`; iki sezon ayrı ayrı):
 - Yalnız istatistik (kendi Elo, clubelo, son 8 maç ve iç saha/deplasman formu: gol, isabetli şut, şut, korner, kart, puan; dinlenme günü; lig seviyesi) ile makine öğrenmesi (gradient boosting): 51 pazarın 51'inde oranlardan daha kötü (log kayıp %1,4 kötü).
 - İstatistik + oran birlikte: yine 51 pazarın 51'inde yalnız orandan kötü (%0,65).
 - İstatistik modelinin oranlardan yüksek dediği tahminler oranın söylediğinden yaklaşık 1 puan daha sık tuttu (iki sezonda da); küçük ama tutarlı. Bet365 oranlarına karşı hiçbir model kazandırmadı (−%4 ile −%11).
-- Günün 5'i için yaklaşık 20 seçim varyantı (destek payı, yalnız destekli, istatistik onayı, pazar türü sınırlaması, makine öğrenmesiyle sıralama) denendi; en iyisi mevcut kural: iki sezonda tahminlerin %66,7'si tuttu (ihtimal %64,2), günde 5'te 3,3.
+- Günlük seçim için yaklaşık 20 varyant (destek payı, yalnız destekli, istatistik onayı, pazar türü sınırlaması, makine öğrenmesiyle sıralama) denendi; en iyisi mevcut kural: iki sezonda tahminlerin %66,7'si tuttu (ihtimal %64,2), günde 5'te 3,3.
 
 Varsayılan ayarla (ihtimal en az %60, tahmini İddaa oranı en az 1,20; yani ihtimal %60-70): 2024-25'ten beri 127.056 öneri, %65,3 tuttu (model %65,2); eğitimden sonraki maçlarda %65,2. Bu aralıkta destekli öneriler modelden 2 puan daha sık tuttu.
 
