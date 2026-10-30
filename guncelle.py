@@ -556,6 +556,43 @@ def model_ekle(kat, gecmis, gecici_l, fikstur):
     return len(tum)
 
 
+ONERI_PERF_BAS = date(2024, 7, 1)    # öneri performansının ölçüldüğü dönemin başı (araştırmanın test dönemi)
+ONERI_GECMIS_GUN = 14                # sayfanın "Geçmiş" bölümünde önerileri gösterilen son gün sayısı
+
+
+def oneri_ekle(kat, m_kay, g_kay, b_kay, f_kay, bugun_no):
+    """Öneri formülü (oneri.py): fikstür, sonuç bekleyen ve son günlerin maçları için öneriler + geçmiş performans."""
+    import numpy as np
+    import oneri
+    gecmis = sorted(m_kay + g_kay, key=lambda m: m["gun"])
+    Yg = oneri.sonuclar(gecmis)
+    Pg = oneri.marjsiz(gecmis)
+    perf_bas = gun_no(ONERI_PERF_BAS)
+    hedef = [m for m in gecmis if m["gun"] >= perf_bas and m.get("mdl")] + [m for m in b_kay + f_kay if m.get("mdl")]
+    if not hedef:
+        return None
+    mdl = [m["mdl"] for m in hedef]
+    nanf = lambda x: np.nan if x is None else x  # noqa
+    P = oneri.ihtimaller(np.array([x["lh"] for x in mdl], float), np.array([x["la"] for x in mdl], float),
+                         np.array([nanf(x["mc"]) for x in mdl], float), np.array([nanf(x["mk"]) for x in mdl], float), kat)
+    N, H = oneri.benzer_destek(gecmis, Yg, Pg, hedef, oneri.marjsiz(hedef))
+    Y = oneri.sonuclar(hedef)
+    gunler = np.array([m["gun"] for m in hedef])
+    egitim_bitis = gun_no(date.fromisoformat(kat["egitim_bitis"])) if kat.get("egitim_bitis") else bugun_no
+    donem = {"tum": (perf_bas, 10 ** 7), "canli": (egitim_bitis + 1, 10 ** 7), "son30": (bugun_no - 30, 10 ** 7)}
+    perf = oneri.performans(P, Y, N, H, gunler, donem)
+    liste = oneri.oneriler(P, N, H)
+    mac = {}
+    for m, o in zip(hedef, liste):
+        if o and (m.get("sonuc") is None or m["gun"] >= bugun_no - ONERI_GECMIS_GUN):
+            mac[f'{m["lig"]}|{m["gun"]}|{m["ev"]}|{m["dep"]}'] = o
+    return {"surum": 1, "pazar": [list(x) for x in oneri.PAZARLAR], "gruplar": oneri.GRUPLAR,
+            "esik": {"en_az_adil": oneri.EN_AZ_ADIL, "taban": oneri.TABAN_IHTIMAL, "destek_mac": oneri.DESTEK_EN_AZ_MAC,
+                     "destek_oran": oneri.DESTEK_ORAN, "destek_ek": oneri.DESTEK_EK, "yakin": oneri.YAKIN, "tol": oneri.TOL},
+            "donem": {k: [a, None if b >= 10 ** 7 else b] for k, (a, b) in donem.items()},
+            "mac": mac, "perf": perf}
+
+
 def fikstur_lig_ozeti(f_kay):
     """Gelecek maçların ligler bazında dökümü: {lig: {n, korner_yok, kart_yok}} (model denetimi için)."""
     ozet = {}
@@ -723,6 +760,18 @@ def main():
         model_hata = "katsayilar.json yok"
         print("  ! katsayilar.json yok; model hesaplanmadı")
 
+    # Öneri formülü (hata verirse veri akışı sürer, sayfa önerisiz açılır)
+    oneri_veri, oneri_hata = None, None
+    if model_var:
+        try:
+            oneri_veri = oneri_ekle(kat, m_kay, g_kay, b_kay, f_kay, bugun_no)
+            print(f"  öneri: {len(oneri_veri['mac']) if oneri_veri else 0} maç için öneri hesaplandı")
+        except Exception as e:  # noqa
+            import traceback
+            traceback.print_exc()
+            oneri_hata = f"{type(e).__name__}: {e}"[:200]
+            print(f"  ! öneriler hesaplanamadı: {e}")
+
     def ayr(m):
         return m.get("ayr") or [None] * 4
 
@@ -755,6 +804,7 @@ def main():
         "takim": [ad for ad, _ in sorted(takim.items(), key=lambda x: x[1])],
         "m": m_liste, "g": g_liste, "f": f_liste, "b": b_liste,
         "ayni_gun_sonuc": bool(token or a.fdorg_dosya),
+        "oneri": oneri_veri,
         "nba": {"m": nba_m, "f": nba_f},
         "odds_api": {"aktif": api.aktif(), "kalan": durum.get("kalan"), "hata": durum.get("hata")},
         "gecici_kaynak": "football-data.org" if g_liste else None,
@@ -768,6 +818,7 @@ def main():
     lig_say = Counter(LIGLER[r[0]] for r in m_liste)
     durum["ozet"] = {"mac": len(m_liste), "gecici": len(g_liste), "fikstur": len(f_liste), "sonuc_bekleyen": len(b_liste),
                      "ayni_gun_sonuc_anahtari": bool(token), "nba_mac": len(nba_m),
+                     "oneri": {"var": oneri_veri is not None, "hata": oneri_hata, "mac": len(oneri_veri["mac"]) if oneri_veri else 0},
                      "nba_fikstur": len(nba_f), "son_mac_gunu": max(r[1] for r in m_liste),
                      "lig": dict(sorted(lig_say.items())), "odds_api_aktif": api.aktif(),
                      # model denetimi: kaç maça beklenen gol / korner / kart yazıldı (günlüğe bakmadan kontrol için)

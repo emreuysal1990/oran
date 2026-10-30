@@ -53,14 +53,15 @@ jobs:
         env:
           FOOTBALL_DATA_ORG_TOKEN: ${{ secrets.FOOTBALL_DATA_ORG_TOKEN }}
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
-          # Ana sayfa hangi sürüm olsun? v1.html = sinyalli eski sürüm (şu an ana sayfa), index.html = yeni model sürümü.
-          # İki sürüm de her zaman v1.html ve v2.html adresinde durur.
-          ANA_SAYFA: v1.html
+          # Ana sayfa hangi sürüm olsun? v3.html = öneri formüllü yeni tasarım (şu an ana sayfa),
+          # v1.html = sinyalli eski sürüm, index.html = model sürümü (v2). Hepsi her zaman /v1.html, /v2.html, /v3.html adresinde durur.
+          ANA_SAYFA: v3.html
         run: |
           mkdir -p _site
           python3 guncelle.py --onbellek onbellek --birikim birikim --cikti _site/veri.json
           cp index.html _site/v2.html
           cp v1.html _site/v1.html
+          cp v3.html _site/v3.html
           cp "$ANA_SAYFA" _site/index.html
 
       - name: Biriken veriyi kaydet

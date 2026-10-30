@@ -8,14 +8,30 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 | Adres | Ne |
 |---|---|
-| `/` | **Ana sayfa: eski sürüm (v1)**, "benzer oranlı geçmiş maç" yöntemi ve sinyaller (`v1.html` dosyası). Sinyal için tahmini ihtimal en az %80 olmalı (Ayarlar'dan sınır yok / %80 / %85 / %90 seçilebilir). Yöntem sekmesinden **"3 benzer maç"** seçilirse en yakın 3 maçın hepsinde aynı olan sonuçlar (kesin skor, İY skoru, İY/MS, alt/üst, korner, kart vb.) ihtimal ve adil oranlarıyla gösterilir; İddaa oranı yazılırsa değer hesaplanır. |
-| `/v1.html` | Eski sürümün sabit adresi |
-| `/v2.html` | **Yeni model sürümü (v2):** oranlardan model, 113 pazar, kendi oranını gir, hesaplayıcı, canlı doğruluk kontrolü (`index.html` dosyası) |
+| `/` | **Ana sayfa: yeni tasarım (v3, `v3.html`).** Öneriler, Maçlar, Geçmiş, Performans. Öneri formülü aşağıda; adil oranı 1,20'nin altındaki hiçbir sonuç önerilmez. Maça dokununca tüm pazarlar, oranları en çok benzeyen 10 maç ve İddaa oranını yazıp değer hesaplama. |
+| `/v1.html` | Eski sinyal sayfası: "benzer oranlı geçmiş maç" sinyalleri (10 maçta 10), sinyal için en az tahmini ihtimal ayarı, "3 benzer maç" yöntem sekmesi |
+| `/v2.html` | Model sayfası (`index.html` dosyası): 113 pazar, hesaplayıcı, canlı doğruluk kontrolü |
 
 ### Ana sayfayı değiştirmek
 
-1. `.github/workflows/guncelle.yml` dosyasındaki `ANA_SAYFA: v1.html` satırı ana adreste hangi sürümün açılacağını belirler. Yeni sürümü ana sayfa yapmak için `ANA_SAYFA: index.html` yazıp kaydedin (Commit changes); birkaç dakika içinde değişir. İki sürüm de her zaman `/v1.html` ve `/v2.html` adreslerinde durur.
+1. `.github/workflows/guncelle.yml` dosyasındaki `ANA_SAYFA: v3.html` satırı ana adreste hangi sürümün açılacağını belirler (`v1.html`, `index.html` ya da `v3.html`). Değiştirip kaydedin (Commit changes); birkaç dakika içinde değişir. Üç sürüm de her zaman kendi adresinde durur.
 2. Eski sürümün **tüm deposu** (kod ve iş akışıyla) ayrıca `v1-yedek` dalında saklıdır.
+
+## Öneri formülü (`oneri.py`)
+
+1. **İhtimal:** maçın oranlarından marj çıkarılır, gol modeli kurulur (Poisson / Dixon-Coles); 51 pazarın ihtimali bundan hesaplanır. Korner ve kart için negatif binom.
+2. **Destek:** oranları en çok benzeyen 10 geçmiş maçın (aynı lig, marjsız 1-X-2 ve 2,5 Üst ±2,5 puan) en az 9'unda o pazar tuttuysa öneri "destekli" sayılır, beklenen tutmaya 1 puan eklenir.
+3. **Öneri:** gösterilen ihtimal sayfada seçilen sınırın (varsayılan %70) üstünde, adil oran (1 ÷ ihtimal) en az 1,20.
+
+Öneriler ve geçmiş performans her güncellemede `guncelle.py` içinde hesaplanır ve `veri.json`'daki `oneri` bölümüne yazılır.
+
+**Geriye dönük sonuç** (2024-25'ten beri, her maç yalnızca kendinden önceki bilgiyle; ihtimal en az %70, adil oran en az 1,20): 175.765 öneri, %76,0 tuttu (model %75,8 demişti); destekliler %77,5. Model katsayıları belirlendikten sonra oynanan maçlarda (formülün hiç görmediği maçlar): 14.106 öneri, %76,3 (model %76,2). İhtimal %80+ seçilince %81,8.
+
+**Denenip elenenler** (`arastirma/f_*.py`, 22 Avrupa ligi, iki sezon ayrı ayrı):
+- Takım formu (son 8 maçta gol, isabetli şut, şut, korner, kart, puan) eklemek tahminleri %0,2 kötüleştirdi; tek bir "isabetli şut farkı" göstergesi de etkisiz kaldı (+%0,01). Bu bilgiler oranlarda zaten var.
+- "En yakın 3 maçta ortak sonuç", benzer maç sayısını 2-10 arasında değiştirmek ve lig sırası benzerliği ihtimalin üstüne bir şey katmadı.
+- Hiçbir pazar türü yüksek ihtimal aralığında düzenli olarak daha sık tutmadı (hepsi ±1 puan içinde).
+- Hiçbir formül oranların kendisinden daha iyi tahmin etmedi: tutma şansını sonucun ihtimali belirler; kazanç ancak İddaa oranı adil orandan yüksek olduğunda mümkündür.
 
 ## Veri (yalnızca yasal kaynaklar)
 
@@ -66,7 +82,8 @@ Ayrıntılar ve yeniden üretme adımları: [`arastirma/README.md`](arastirma/RE
 
 | Dosya | Ne |
 |---|---|
-| `index.html`, `v1.html` | Sayfalar (tek dosya; `veri.json`'u okurlar) |
+| `v3.html`, `v1.html`, `index.html` | Sayfalar (tek dosya; `veri.json`'u okurlar). `v3.html` yeni tasarım, `index.html` v2 (kaynağı `kaynak/`) |
+| `oneri.py` | Öneri formülü: 51 pazarın ihtimali, benzer maç desteği, öneriler ve geçmiş performans |
 | `guncelle.py` | Veriyi indirir, birleştirir, model değerlerini hesaplayıp `veri.json` üretir |
 | `modelkit.py`, `katsayilar.json` | Model çekirdeği (yalnızca numpy) ve eğitilmiş katsayılar |
 | `kaynak/` | `index.html`'in kaynakları (`model.js`, `pazarlar.js`, `betik.js`, `stil.css`, `govde.html`); `python3 kaynak/derle.py --repo .` ile derlenir; `node kaynak/parite_test.js` JS modelini Python ile karşılaştırır |
@@ -77,7 +94,7 @@ Ayrıntılar ve yeniden üretme adımları: [`arastirma/README.md`](arastirma/RE
 
 1. GitHub'da **New repository** → **Public** → **Create repository**.
 2. **Settings → Pages → Build and deployment → Source: GitHub Actions** seçin.
-3. Bu depodaki dosyaları ekleyin (özellikle `index.html`, `v1.html`, `guncelle.py`, `modelkit.py`, `katsayilar.json` ve `.github/workflows/guncelle.yml`).
+3. Bu depodaki dosyaları ekleyin (özellikle `v3.html`, `v1.html`, `index.html`, `guncelle.py`, `modelkit.py`, `oneri.py`, `katsayilar.json` ve `.github/workflows/guncelle.yml`).
 4. **Actions** sekmesinde **Verileri güncelle** iş akışı çalışır (çalışmazsa **Run workflow**). 1–2 dakika sonra sayfa açılır: `https://KULLANICI-ADINIZ.github.io/DEPO-ADI/`
 5. iPhone'da Safari ile açıp **Paylaş → Ana Ekrana Ekle** diyebilirsiniz.
 
