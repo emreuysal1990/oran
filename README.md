@@ -21,7 +21,10 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 1. **İhtimal:** maçın oranlarından marj çıkarılır, gol modeli kurulur (Poisson / Dixon-Coles); 51 pazarın ihtimali bundan hesaplanır. Korner ve kart için negatif binom.
 2. **Destek:** oranları en çok benzeyen 10 geçmiş maçın (aynı lig, marjsız 1-X-2 ve 2,5 Üst ±2,5 puan) en az 9'unda o pazar tuttuysa öneri "destekli" sayılır, beklenen tutmaya 1 puan eklenir.
-3. **Öneri:** gösterilen ihtimal sayfada seçilen sınırın (varsayılan %70) üstünde, adil oran (1 ÷ ihtimal) en az 1,20.
+3. **Öneri:** gösterilen ihtimal sayfada seçilen sınırın üstünde ve oran en az 1,20. Oran sınırı varsayılan olarak **tahmini İddaa oranına** uygulanır (Ayarlar'dan adil orana çevrilebilir).
+4. **Tahmini İddaa oranı** = adil oran ÷ 1,19. İddaa'nın marjı, örnek maçlarda MS, 2,5 Alt/Üst ve KG pazarlarının hepsinde %18-19 çıktı. Gerçek İddaa oranı değildir; gerçek oranı maç ayrıntısına yazınca değer hesaplanır.
+
+Varsayılan ayarla (ihtimal en az %60, tahmini İddaa oranı en az 1,20; yani ihtimal %60-70): 2024-25'ten beri 127.056 öneri, %65,3 tuttu (model %65,2); eğitimden sonraki maçlarda %65,2. Bu aralıkta destekli öneriler modelden 2 puan daha sık tuttu.
 
 Öneriler ve geçmiş performans her güncellemede `guncelle.py` içinde hesaplanır ve `veri.json`'daki `oneri` bölümüne yazılır.
 
