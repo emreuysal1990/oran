@@ -30,6 +30,9 @@ python3 t_roi.py          # düz bahis ve sinyal ROI'si
 python3 t_genis.py        # 62 ek pazarın doğruluğu
 python3 t_esik.py         # eski sinyaller ve yeni modelin ihtimal eşikleri (isabet)
 python3 t_guclu.py        # eski sinyalleri tahmini ihtimal / model ihtimaliyle süzme
+python3 t_uc.py           # 'en yakın 3 maçın 3'ünde de aynı' kuralının ilk testi
+python3 uc_deney.py       # aynı kuralın varyantları (2-10 maç, lig sırası benzerliği, adil oran eşiği), sezon sezon
+python3 uc_model.py       # ortak sonuçların ihtimali: benzer maç penceresi mi gol modeli mi (kalibrasyon)
 python3 egit.py son ../katsayilar.json   # üretim katsayıları (tüm veriyle)
 python3 parite_uret.py    # ../kaynak/parite.json (JS model testi için)
 ```
