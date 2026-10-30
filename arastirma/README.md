@@ -36,6 +36,10 @@ python3 uc_model.py       # ortak sonuçların ihtimali: benzer maç penceresi m
 python3 f_hazir.py        # öneri formülü: özellik tablosu (model ihtimali, benzer maçlar, takım formu)
 python3 f_deney.py        # formül adayları M0-M4, iki sezon, log kayıp
 python3 f_kural.py        # öneri kuralları: ihtimal aralığı, benzer maç desteği, adil oran >= 1,20
+python3 f_bagimsiz_oz.py  # oranlardan bağımsız özellikler: kendi Elo, clubelo, genel / iç saha / deplasman formu, dinlenme
+python3 f_bagimsiz_deney.py  # yalnız istatistik ve istatistik+oran gradient boosting, iki sezon
+python3 f_bagimsiz_analiz.py # model uyuşması, Günün 5'i sıralaması, Bet365 getirisi
+python3 f_g5_varyant.py   # Günün 5'i seçim varyantları
 python3 egit.py son ../katsayilar.json   # üretim katsayıları (tüm veriyle)
 python3 parite_uret.py    # ../kaynak/parite.json (JS model testi için)
 ```

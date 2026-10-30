@@ -263,6 +263,7 @@ def gunun5_karne(P, N, H, Y, gunler, anahtarlar, donemler):
         for ad, (bas, bit) in donemler.items():
             gunler_d = [(g, s_) for g, s_ in sonuc_gun if bas <= g < bit]
             n = h = 0; ps = 0.0; dag = [0] * (GUNUN5_ADET + 1); kupon_n = kupon_h = 0; kupon_oran = 0.0
+            ilk_k = [0] * GUNUN5_ADET; ilk_k_oran = [0.0] * GUNUN5_ADET; sira_h = [0] * GUNUN5_ADET
             for g, s_ in gunler_d:
                 for t, p_, o in s_:
                     if t is None:
@@ -271,7 +272,12 @@ def gunun5_karne(P, N, H, Y, gunler, anahtarlar, donemler):
                 if len(s_) == GUNUN5_ADET and all(t is not None for t, _, _ in s_):
                     k = sum(int(t) for t, _, _ in s_); dag[k] += 1; kupon_n += 1; kupon_h += int(k == GUNUN5_ADET)
                     kupon_oran += float(np.prod([o for _, _, o in s_]))
+                    for k in range(GUNUN5_ADET):          # ilk k+1 tahminle kurulan kupon
+                        ilk_k[k] += int(all(t for t, _, _ in s_[:k + 1]))
+                        ilk_k_oran[k] += float(np.prod([o for _, _, o in s_[:k + 1]]))
+                        sira_h[k] += int(s_[k][0])
             d_out[ad] = {"gun": len(gunler_d), "n": n, "h": h, "p": round(ps, 2), "dagilim": dag, "kupon_gun": kupon_n,
-                         "kupon_tuttu": kupon_h, "kupon_oran_ort": round(kupon_oran / kupon_n, 2) if kupon_n else None}
+                         "kupon_tuttu": kupon_h, "kupon_oran_ort": round(kupon_oran / kupon_n, 2) if kupon_n else None,
+                         "ilk_k_tuttu": ilk_k, "ilk_k_oran_ort": [round(x / kupon_n, 2) if kupon_n else None for x in ilk_k_oran], "sira_tuttu": sira_h}
         out[f"{esik:.2f}"] = d_out
     return out

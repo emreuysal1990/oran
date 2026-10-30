@@ -26,6 +26,14 @@ Bahis şirketlerinin oranlarından (1-X-2 ve 2,5 Alt/Üst) marjı çıkarıp bir
 
 **Günün 5'i:** her gün, o günün maçlarından tahmini İddaa oranı en az 1,30 (1,20 / 1,40 / 1,50 seçilebilir) olan en güçlü 5 tahmin, 5 ayrı maçtan (her maçta beklenen tutması en yüksek uygun pazar; sonra maçlar bu değere göre sıralanır). Sayfada son 14 gün sonuçlarıyla, gelecek günler maç öncesi görünür. Aynı kural 2024-25'ten beri her gün uygulandığında (1,30 eşiği): 734 gün, 2.986 tahminin %64,4'ü tuttu (model %64,0); günde ortalama 3,2 / 5; 5'te 5 günlerin %12,8'i; 5'li kuponun tahmini İddaa oranı ortalama 3,84.
 
+Kupon büyüklüğü seçilebilir (ilk 1-5 tahmin). 1,30 eşiğinde geçmişte "hepsi tuttu" oranı: tek maç %64, 2'li %41, 3'lü %28, 4'lü %18, 5'li %13 (tahmini İddaa oranı 1,30 / 1,70 / 2,23 / 2,92 / 3,84). İddaa'nın %19 marjı yüzünden tahmini oranlarla her kupon uzun vadede kaybettirir; kupon büyüdükçe kayıp büyür.
+
+**Oranlardan bağımsız formüller de denendi** (`arastirma/f_bagimsiz_*.py`, `arastirma/f_g5_varyant.py`; iki sezon ayrı ayrı):
+- Yalnız istatistik (kendi Elo, clubelo, son 8 maç ve iç saha/deplasman formu: gol, isabetli şut, şut, korner, kart, puan; dinlenme günü; lig seviyesi) ile makine öğrenmesi (gradient boosting): 51 pazarın 51'inde oranlardan daha kötü (log kayıp %1,4 kötü).
+- İstatistik + oran birlikte: yine 51 pazarın 51'inde yalnız orandan kötü (%0,65).
+- İstatistik modelinin oranlardan yüksek dediği tahminler oranın söylediğinden yaklaşık 1 puan daha sık tuttu (iki sezonda da); küçük ama tutarlı. Bet365 oranlarına karşı hiçbir model kazandırmadı (−%4 ile −%11).
+- Günün 5'i için yaklaşık 20 seçim varyantı (destek payı, yalnız destekli, istatistik onayı, pazar türü sınırlaması, makine öğrenmesiyle sıralama) denendi; en iyisi mevcut kural: iki sezonda tahminlerin %66,7'si tuttu (ihtimal %64,2), günde 5'te 3,3.
+
 Varsayılan ayarla (ihtimal en az %60, tahmini İddaa oranı en az 1,20; yani ihtimal %60-70): 2024-25'ten beri 127.056 öneri, %65,3 tuttu (model %65,2); eğitimden sonraki maçlarda %65,2. Bu aralıkta destekli öneriler modelden 2 puan daha sık tuttu.
 
 Öneriler ve geçmiş performans her güncellemede `guncelle.py` içinde hesaplanır ve `veri.json`'daki `oneri` bölümüne yazılır.
