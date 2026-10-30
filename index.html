@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Oran Bülteni</title>
+<title>Benzer Oran Bülteni</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Oran Bülteni v2: başlıkta Güncelle tuşu ve Futbol / NBA seçimi; Gelecek / Geçmiş / Hesaplayıcı sekmeleri; filtre çubuğu; maç satırları (model ihtimali + adil oran), açılınca tüm pazarlar ve kendi oranını yazma kutuları; altta geriye dönük test. */
+/* Düzen: başlıkta Güncelle tuşu; Gelecek / Geçmiş sekmeleri; filtre çubuğu (tarih, lig, pazar, sıralama); iddaa bülteni gibi maç satırları, açılınca tüm pazarlar ve benzer maçlar; altta ayarlar ve backtest. */
 :root {
   --bg: #eef2ef; --surface: #ffffff; --surface-2: #f6f8f6; --ink: #142019; --muted: #5a6a61; --line: #d6dfd8;
   --accent: #0b5d7a; --accent-soft: #e2eff4; --signal: #c98a06; --signal-soft: #fdf3dc;
@@ -27,7 +27,6 @@
   --accent: #62b6d3; --accent-soft: #15303a; --signal: #f0b43c; --signal-soft: #3a2d10;
   --hit: #4cc38a; --hit-soft: #133224; --miss: #f08158; --miss-soft: #3a1d12; --on-accent: #0e1411; --est: #c3a1ef; color-scheme: dark; }
 * { box-sizing: border-box; }
-[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
@@ -50,10 +49,6 @@ header.top { display: grid; gap: 10px; }
 .tabs button { font: inherit; font-family: var(--f-display); font-size: 1.05rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); background: transparent; border: 0; padding: 8px 18px; cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
 .tabs button span { font-family: var(--f-mono); font-size: 12px; margin-left: 4px; }
-.spor { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-.spor button { font: inherit; font-weight: 600; font-size: 13px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
-.spor button[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
-.spor button:focus-visible, .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bar { background: var(--bg); padding-block: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: end; border-bottom: 1px solid var(--line); }
 @media (min-width: 900px) { .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; } }
 .bar label { display: grid; gap: 2px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
@@ -74,7 +69,6 @@ header.top { display: grid; gap: 10px; }
 .lg { font-family: var(--f-display); font-weight: 600; font-size: 13px; letter-spacing: .04em; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 1px 6px; justify-self: start; }
 .teams { min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .teams .res { font-family: var(--f-mono); font-weight: 500; margin-left: 8px; color: var(--muted); white-space: nowrap; }
-.teams .gec { font-size: 11px; font-weight: 500; margin-left: 6px; padding: 0 6px; border-radius: 999px; border: 1px dashed var(--muted); color: var(--muted); white-space: nowrap; }
 .odds { display: flex; gap: 4px; }
 .odd { font-family: var(--f-mono); font-size: 13px; min-width: 46px; text-align: center; padding: 3px 4px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); }
 .odd small { display: block; font-size: 10px; color: var(--muted); font-family: var(--f-body); }
@@ -83,7 +77,7 @@ header.top { display: grid; gap: 10px; }
 .pick .e { color: var(--est); font-family: var(--f-mono); }
 .pick.hit { border-style: solid; border-color: var(--hit); background: var(--hit-soft); }
 .pick.miss { border-style: solid; border-color: var(--miss); background: var(--miss-soft); }
-.pick-bos { display: block; min-width: 0; }
+.pick-bos { display: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 260px; }
 .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--signal-soft); color: var(--ink); border: 1px solid var(--signal); white-space: nowrap; }
 .chip.hit { background: var(--hit-soft); border-color: var(--hit); }
@@ -92,7 +86,6 @@ header.top { display: grid; gap: 10px; }
 .caret { color: var(--muted); transition: transform .15s; }
 .fx.open .caret { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .caret { transition: none; } }
-.fx:not(.open) > .detail { display: none; }
 .detail { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 14px; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
 .legend .e { color: var(--est); font-weight: 600; }
@@ -109,13 +102,11 @@ tr.sig td:first-child { box-shadow: inset 3px 0 0 var(--signal); }
 .ok { color: var(--hit); font-weight: 600; }
 .no { color: var(--miss); font-weight: 600; }
 .empty { padding: 24px; text-align: center; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; }
-.panel h2 { font-size: 1.2rem; }
-.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
-.ayar-ozet { margin: 0; font-size: 13px; color: var(--muted); }
-.ayar-ozet b { color: var(--ink); font-weight: 600; }
+details.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+details.panel summary { cursor: pointer; font-family: var(--f-display); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
 .form label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-.form select, .form input { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; min-width: 0; }
+.form select { font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; min-width: 0; }
 section.bt { display: grid; gap: 12px; }
 .bt .lead { max-width: 75ch; margin: 0; }
 .bt table td.good { color: var(--hit); font-weight: 600; }
@@ -130,56 +121,6 @@ section.bt { display: grid; gap: 12px; }
   .fx > button .caret { grid-row: 1; grid-column: 4; }
   h1 { font-size: 1.9rem; }
 }
-
-/* ---- v2 eklemeleri ---- */
-.chips { max-width: 330px; }
-.detail > .scroll { max-width: 860px; }
-.chip.model { background: var(--surface-2); border-color: var(--line); }
-.chip.model[title] { cursor: help; }
-.btn.ikincil { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 6px 14px; justify-self: start; }
-details.info { padding: 0; gap: 0; }
-details.info > summary { cursor: pointer; font-weight: 600; padding: 10px 14px; list-style: none; display: flex; align-items: center; gap: 8px; }
-details.info > summary::-webkit-details-marker { display: none; }
-details.info > summary::before { content: "›"; display: inline-block; color: var(--muted); transition: transform .15s; }
-details.info[open] > summary::before { transform: rotate(90deg); }
-@media (prefers-reduced-motion: reduce) { details.info > summary::before { transition: none; } }
-.info-govde { padding: 0 14px 14px; display: grid; gap: 8px; max-width: 82ch; }
-.info-govde p { margin: 0; }
-.hes-not { margin: 0; max-width: 82ch; font-size: 13px; }
-.hes-form { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); max-width: 680px; }
-#hes-sonuc { display: grid; gap: 10px; }
-details.ozel { border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
-details.ozel > summary { cursor: pointer; padding: 8px 12px; font-weight: 600; color: var(--accent); }
-details.ozel > .form { padding: 2px 12px 8px; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); max-width: 640px; }
-details.ozel .ozel-not { margin: 0; padding: 0 12px 8px; font-size: 12px; max-width: 80ch; }
-details.ozel > .btn { margin: 0 12px 12px; }
-.tablo-ara input { font: inherit; font-size: 13px; width: 100%; max-width: 360px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
-table.pazar td.inp { padding: 2px 6px; }
-table.pazar td.inp input { width: 76px; font: inherit; font-family: var(--f-mono); font-size: 13px; text-align: right; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; }
-table.pazar td.ev.good { color: var(--hit); font-weight: 600; }
-table.pazar td.ev.bad { color: var(--miss); }
-table.pazar td.ok, table.pazar td.no { font-family: var(--f-body); }
-.bt table tr.toplam td { font-weight: 600; border-top: 2px solid var(--line); }
-.bulgu { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 6px; max-width: 82ch; }
-.kal { display: grid; gap: 10px; margin-top: 8px; }
-.kal h3 { font-size: 1.15rem; text-transform: uppercase; }
-.kal-form { max-width: 520px; }
-
-.wrap, section.bt, .kal, .panel, .detail, .info-govde { grid-template-columns: minmax(0, 1fr); }
-.bt-wrap, #arastirma, .kal > * { min-width: 0; }
-table.pazar td:first-child { white-space: normal; min-width: 112px; }
-.tabs { max-width: 100%; }
-@media (max-width: 820px) {
-  .tabs { display: flex; justify-self: stretch; }
-  .tabs button { flex: 1 1 0; min-width: 0; padding: 8px 6px; font-size: .95rem; line-height: 1.15; }
-  table.pazar th, table.pazar td { padding-inline: 5px; }
-  table.pazar td.inp input { width: 58px; }
-  table.pazar th { white-space: normal; line-height: 1.2; letter-spacing: .02em; vertical-align: bottom; }
-  table.pazar td { font-size: 12.5px; }
-  table.pazar td:first-child { min-width: 88px; }
-  .detail { padding: 10px; }
-  .bar select, .bar input { max-width: 100%; }
-}
 </style>
 
 </head>
@@ -187,491 +128,124 @@ table.pazar td:first-child { white-space: normal; min-width: 112px; }
 <div class="wrap">
   <header class="top">
     <div class="hrow">
-      <h1>Oran Bülteni</h1>
+      <h1>Benzer Oran Bülteni</h1>
       <div class="upd"><span class="upd-durum" id="upd-durum"></span><button class="btn" type="button" id="guncelle">Güncelle</button></div>
-    </div>
-    <div class="spor" role="group" aria-label="Spor">
-      <button type="button" id="spor-futbol" aria-pressed="true">Futbol</button>
-      <button type="button" id="spor-nba" aria-pressed="false">Basketbol · NBA</button>
     </div>
     <div class="meta" id="meta"><span>Veri yükleniyor…</span></div>
   </header>
 
-  <details class="panel info" id="bilgi">
-    <summary>Bu sayfa nasıl çalışıyor?</summary>
-    <div class="info-govde">
-      <p><b>Fikir.</b> Bahis şirketlerinin oranları, marjları çıkarılınca maç hakkındaki en iyi bilgi kaynağıdır. Sayfa, her maçın 1-X-2 ve 2,5 Alt/Üst oranlarından
-        marjı temizler, bu ihtimallere uyan bir gol modeli (Poisson / Dixon-Coles) kurar ve oradan diğer tüm pazarların ihtimalini ve <b>adil oranını</b> (1 ÷ ihtimal) hesaplar:
-        KG, takım golü, ilk yarı, ilk yarı/maç sonucu, handikap, birleşik pazarlar. Korner ve kart için, takımların son 20 maçı ve ligin seviyesi de kullanılır.</p>
-      <p><b>Neye yarar?</b> Elindeki bir oranın (ör. İddaa'daki) modele göre değerli olup olmadığına bakmak için. Bir pazarın yanındaki kutuya kendi oranını yaz; sayfa
-        <b>değer</b> = ihtimal × oran − 1 değerini gösterir. Artı ise oran, modelin adil oranından yüksektir.</p>
-      <p><b>Dürüst uyarı.</b> Model yeni bilgi üretmez; oranlardaki bilgiyi diğer pazarlara dağıtır, yani bahis şirketlerinden fazlasını bildiği iddia edilmez. Geriye dönük testte (aşağıda) 51 pazarın hepsinde eski "benzer maç"
-        yönteminden daha doğru çıktı. Test döneminde tüm maçlara düz oynanan 1-X-2 ve 2,5 Alt/Üst bahisleri ise −%4 ile −%11 arasında kaybettirdi. Bu sayfa istatistiksel bir araçtır, bahis tavsiyesi değildir.</p>
-      <p class="muted">Eski sürümü (benzer oranlı geçmiş maçlardan "sinyal" üreten yöntem) görmek için: <a href="v1.html">v1.html</a>.</p>
+  <div class="tabs" role="tablist" aria-label="Maçlar">
+    <button type="button" role="tab" id="tab-g" aria-selected="true">Gelecek maçlar<span id="n-g"></span></button>
+    <button type="button" role="tab" id="tab-p" aria-selected="false">Geçmiş maçlar<span id="n-p"></span></button>
+  </div>
+
+  <div class="bar">
+    <label for="f-hizli">Tarih
+      <select id="f-hizli"></select></label>
+    <label for="f-bas">Başlangıç <input type="date" id="f-bas"></label>
+    <label for="f-bit">Bitiş <input type="date" id="f-bit"></label>
+    <label for="f-lig">Lig <select id="f-lig"></select></label>
+    <label for="f-pazar">Pazar <select id="f-pazar"></select></label>
+    <label for="f-sira">Sıralama <select id="f-sira"><option value="tarih">Tarih</option><option value="ihtimal">Seçili pazarın ihtimali</option></select></label>
+    <label for="f-ara" class="grow">Takım <input id="f-ara" type="search" placeholder="Takım ara"></label>
+    <label class="chk"><input id="f-sinyal" type="checkbox"> Sadece sinyalli</label>
+    <span class="count" id="f-count"></span>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+  <div id="fixtures"><div class="empty">Veri yükleniyor…</div></div>
+
+  <details class="panel" id="ayarlar">
+    <summary>Ayarlar</summary>
+    <div class="form">
+      <label for="a-tol">Benzerlik toleransı
+        <select id="a-tol"><option value="0.015">±1,5 puan</option><option value="0.02">±2 puan</option><option value="0.025">±2,5 puan</option><option value="0.03">±3 puan</option><option value="0.04">±4 puan</option><option value="0.05">±5 puan</option></select></label>
+      <label for="a-max">En yakın kaç maç
+        <select id="a-max"><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option><option>30</option></select></label>
+      <label for="a-min">Sinyal için en az maç
+        <select id="a-min"><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
+      <label for="a-esik">Sinyal eşiği
+        <select id="a-esik"><option value="1">%100 (hepsi tuttu)</option><option value="0.9">%90</option><option value="0.8">%80</option></select></label>
     </div>
   </details>
 
-  <div class="tabs" role="tablist" aria-label="Görünüm">
-    <button type="button" role="tab" id="tab-g" aria-selected="true">Gelecek maçlar<span id="n-g"></span></button>
-    <button type="button" role="tab" id="tab-p" aria-selected="false">Geçmiş maçlar<span id="n-p"></span></button>
-    <button type="button" role="tab" id="tab-h" aria-selected="false">Hesaplayıcı</button>
-  </div>
-
-  <div id="liste-alan">
-    <div class="bar">
-      <label for="f-hizli">Tarih
-        <select id="f-hizli"></select></label>
-      <label for="f-bas">Başlangıç <input type="date" id="f-bas"></label>
-      <label for="f-bit">Bitiş <input type="date" id="f-bit"></label>
-      <label for="f-lig">Lig <select id="f-lig"></select></label>
-      <label for="f-pazar">Pazar <select id="f-pazar"></select></label>
-      <label for="f-min">En az ihtimal <select id="f-min"><option value="">Hepsi</option><option value="0.5">%50</option><option value="0.6">%60</option><option value="0.7">%70</option><option value="0.8">%80</option><option value="0.9">%90</option></select></label>
-      <label for="f-sira">Sıralama <select id="f-sira"><option value="tarih">Tarih</option><option value="ihtimal">Seçili pazarın ihtimali</option></select></label>
-      <label for="f-ara" class="grow">Takım <input id="f-ara" type="search" placeholder="Takım ara"></label>
-      <span class="count" id="f-count"></span>
-    </div>
-    <div class="banner" id="banner" hidden></div>
-    <div id="fixtures"><div class="empty">Veri yükleniyor…</div></div>
-  </div>
-
-  <section class="panel" id="hesap-alan" hidden aria-labelledby="hes-baslik">
-    <h2 id="hes-baslik">Hesaplayıcı</h2>
-    <p class="muted hes-not">Herhangi bir maçın 1-X-2 oranlarını (ve varsa 2,5 Alt/Üst oranlarını) yaz; model tüm pazarların ihtimalini ve adil oranını hesaplasın. Oranlar bahis şirketinden, marjlı haliyle yazılabilir. Korner ve kart için takım bilgisi gerekir; bunlar için maç listesinden bir maç aç.</p>
-    <div class="form hes-form">
-      <label for="h-1">MS 1 <input id="h-1" inputmode="decimal" placeholder="1,85" autocomplete="off"></label>
-      <label for="h-x">MS X <input id="h-x" inputmode="decimal" placeholder="3,60" autocomplete="off"></label>
-      <label for="h-2">MS 2 <input id="h-2" inputmode="decimal" placeholder="4,20" autocomplete="off"></label>
-      <label for="h-u">2,5 Üst <input id="h-u" inputmode="decimal" placeholder="1,90" autocomplete="off"></label>
-      <label for="h-a">2,5 Alt <input id="h-a" inputmode="decimal" placeholder="1,90" autocomplete="off"></label>
-    </div>
-    <div id="hes-sonuc"></div>
-  </section>
-
   <section class="bt">
-    <h2>Model geçmişte nasıl çalıştı?</h2>
-    <div id="arastirma"></div>
-    <div class="kal">
-      <h3>Canlı kontrol</h3>
-      <p class="lead" id="kal-lead">Sayfadaki geçmiş maçlar yüklenince hesaplanacak.</p>
-      <div class="form kal-form">
-        <label for="k-grup">Pazar grubu <select id="k-grup"></select></label>
-        <label for="k-donem">Dönem <select id="k-donem"><option value="12ay">Son 12 ay</option><option value="tum">Tüm geçmiş</option></select></label>
-      </div>
-      <div class="bt-wrap scroll"><table id="kal-table"></table></div>
-    </div>
+    <h2>Sistem geçmişte nasıl çalıştı?</h2>
+    <p class="lead" id="bt-lead">Backtest veriler yüklenince hesaplanacak.</p>
+    <div class="bt-wrap scroll"><table id="bt-table"></table></div>
+    <div class="bt-wrap scroll"><table id="bt-lig"></table></div>
   </section>
 
   <footer class="foot" id="foot"></footer>
 </div>
 <script>
-const KAT_YEDEK = {"c":{"alfa":0.015147,"b":2.283105,"egitim_n":21690,"lig":{"B1":0.0,"D1":0.0,"D2":0.0,"E0":0.0,"E1":0.0,"E2":0.0,"E3":0.0,"F1":0.0,"F2":0.0,"G1":0.0,"I1":0.0,"I2":0.0,"N1":0.0,"P1":0.0,"SC0":0.0,"SC1":0.0,"SC2":0.0,"SC3":0.0,"SP1":0.0,"SP2":0.0,"T1":0.0},"ort":[2.77002,0.664189,1.549448,1.220572,4.911529,4.930966,4.939211,4.903376,9.87016],"ozellik":["T","D","lh","la","ev_atan","ev_yiyen","dep_atan","dep_yiyen","lig_toplam"],"sd":[0.393902,0.57089,0.489038,0.409722,0.989422,0.983594,0.994127,0.973851,0.522891],"w":[0.019734,-0.001448,0.011989,0.004662,0.023009,0.022236,0.021295,0.02608,0.01064]},"egitim_bitis":"2026-09-03","fa":0.445331,"fh":0.444791,"k":{"alfa":0.025807,"b":1.442712,"egitim_n":22961,"lig":{"B1":-0.013668,"D1":0.009087,"D2":0.029635,"E0":0.008361,"E1":-0.034566,"E2":-0.038557,"E3":-0.03009,"EC":-0.022876,"F1":-0.004895,"F2":-0.039303,"G1":0.050822,"I1":-0.014173,"I2":0.021949,"N1":-0.073996,"P1":0.060962,"SC0":-0.012071,"SC1":0.000245,"SC2":-0.016896,"SC3":-0.00014,"SP1":0.030542,"SP2":0.039398,"T1":0.049486},"ort":[2.777748,0.660287,1.552538,1.22521,2.156635,2.149021,2.148296,2.157919,4.309428],"ozellik":["T","D","lh","la","ev_atan","ev_yiyen","dep_atan","dep_yiyen","lig_toplam"],"sd":[0.390191,0.566778,0.48537,0.406911,0.51073,0.509978,0.508571,0.510777,0.577843],"w":[-0.00958,-0.046578,-0.004137,-0.004252,0.029833,0.04164,0.026383,0.033321,0.013044]},"kappa":0.9,"lig_pencere":400,"pencere":20,"pu_onsel_w":[0.771218,0.242175,-6.660069,-0.511314,-1.662683,2.884302],"rho":-0.04,"ufuk":"2023-07-01"};
-// ============================================================================ model.js
-// Oran modeli (Python'daki modelkit.py + araştırma/genis.py'nin birebir JS karşılığı; parite testi ile doğrulanır).
-//  1) Oranlardan marj temizlenir, Poisson / Dixon-Coles skor matrisi uydurulur (beklenen ev ve deplasman golü).
-//  2) Skor matrisinden tüm gol pazarları, yarılar ve birleşik pazarlar hesaplanır.
-//  3) Korner ve kart: negatif binom (takım özellikleri + lig seviyesi + beklenen gol).
-//  4) NBA: normal dağılım modeli (galibiyet ihtimali ve toplam çizgisinden).
-const BOM = (function () {
-  "use strict";
-  const G = 13;                                  // 0..12 gol
-  const LF = new Float64Array(G);
-  for (let k = 1; k < G; k++) LF[k] = LF[k - 1] + Math.log(k);
-  const RHO_VARSAYILAN = -0.04, KAPPA_VARSAYILAN = 0.90;
-
-  // ------------------------------------------------------------------ marj temizleme (güç yöntemi)
-  function margGuc(oranlar) {
-    const inv = oranlar.map(o => 1 / o);
-    let lo = 1, hi = 3;
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2; let s = 0;
-      for (const v of inv) s += Math.pow(v, mid);
-      if (s > 1) lo = mid; else hi = mid;
-    }
-    const k = (lo + hi) / 2, p = inv.map(v => Math.pow(v, k)), t = p.reduce((a, b) => a + b, 0);
-    return p.map(v => v / t);
-  }
-
-  // ------------------------------------------------------------------ Poisson / Dixon-Coles
-  function pmfSatir(lam) {
-    lam = Math.min(Math.max(lam, 1e-4), 9.0);
-    const l = Math.log(lam), o = new Float64Array(G);
-    for (let k = 0; k < G; k++) o[k] = Math.exp(-lam + k * l - LF[k]);
-    return o;
-  }
-  // M[h*G + a]: bağımsız Poisson × Dixon-Coles düşük skor düzeltmesi × (fark >= 2 ağırlığı), toplamı 1
-  function matris(lh, la, rho, kappa, normalle) {
-    if (rho === undefined) rho = RHO_VARSAYILAN;
-    if (kappa === undefined) kappa = KAPPA_VARSAYILAN;
-    if (normalle === undefined) normalle = true;
-    const ph = pmfSatir(lh), pa = pmfSatir(la), M = new Float64Array(G * G);
-    for (let h = 0; h < G; h++) for (let a = 0; a < G; a++) M[h * G + a] = ph[h] * pa[a];
-    if (rho !== 0) { M[0] *= 1 - lh * la * rho; M[1] *= 1 + lh * rho; M[G] *= 1 + la * rho; M[G + 1] *= 1 - rho; }
-    let t = 0;
-    for (let h = 0; h < G; h++) for (let a = 0; a < G; a++) { if (kappa !== 1 && Math.abs(h - a) >= 2) M[h * G + a] *= kappa; t += M[h * G + a]; }
-    if (normalle) for (let i = 0; i < G * G; i++) M[i] /= t;
-    return M;
-  }
-  // 1X2, ev golü dağılımı, deplasman golü dağılımı, toplam gol dağılımı
-  function ozet(M) {
-    let p1 = 0, px = 0, p2 = 0;
-    const ev = new Float64Array(G), dp = new Float64Array(G), top = new Float64Array(2 * G - 1);
-    for (let h = 0; h < G; h++) for (let a = 0; a < G; a++) {
-      const v = M[h * G + a];
-      if (h > a) p1 += v; else if (h === a) px += v; else p2 += v;
-      ev[h] += v; dp[a] += v; top[h + a] += v;
-    }
-    return { p1, px, p2, ev, dp, top, m00: M[0] };
-  }
-  const topla = (d, a, b) => { let s = 0; for (let i = a; i <= b && i < d.length; i++) s += d[i]; return s; };
-
-  // ------------------------------------------------------------------ oranlardan beklenen gol (damped Gauss-Newton)
-  function uyumVektor(lh, la, rho, kappa) {
-    const o = ozet(matris(lh, la, rho, kappa));
-    return [o.p1, o.px, o.p2, 1 - topla(o.top, 0, 2)];
-  }
-  // p1,px,p2: marjsız ihtimaller; pu: 2,5 Üst ihtimali (null/NaN ise puOnsel, wOnsel ağırlığıyla kullanılır)
-  function lambdaUydur(p1, px, p2, pu, opt) {
-    opt = opt || {};
-    const rho = opt.rho === undefined ? RHO_VARSAYILAN : opt.rho, kappa = opt.kappa === undefined ? KAPPA_VARSAYILAN : opt.kappa;
-    const wOnsel = opt.wOnsel === undefined ? 0.3 : opt.wOnsel;
-    const hedef = [p1, px, p2, 0], w = [1, 1, 1, 1];
-    if (pu == null || Number.isNaN(pu)) { hedef[3] = opt.puOnsel == null ? 0.5 : opt.puOnsel; w[3] = wOnsel; } else hedef[3] = pu;
-    let t1 = Math.log(1.45), t2 = Math.log(1.1);
-    const lo = Math.log(0.05), hi = Math.log(6.0), e = 1e-4;
-    for (let it = 0; it < 30; it++) {
-      const f0 = uyumVektor(Math.exp(t1), Math.exp(t2), rho, kappa);
-      const fa = uyumVektor(Math.exp(t1 + e), Math.exp(t2), rho, kappa);
-      const fb = uyumVektor(Math.exp(t1), Math.exp(t2 + e), rho, kappa);
-      let a11 = 1e-6, a12 = 0, a22 = 1e-6, g1 = 0, g2 = 0;
-      for (let i = 0; i < 4; i++) {
-        const r = (f0[i] - hedef[i]) * w[i], j1 = (fa[i] - f0[i]) / e * w[i], j2 = (fb[i] - f0[i]) / e * w[i];
-        a11 += j1 * j1; a12 += j1 * j2; a22 += j2 * j2; g1 += j1 * r; g2 += j2 * r;
-      }
-      const det = a11 * a22 - a12 * a12;
-      const d1 = Math.min(Math.max(-(a22 * g1 - a12 * g2) / det, -0.4), 0.4);
-      const d2 = Math.min(Math.max(-(-a12 * g1 + a11 * g2) / det, -0.4), 0.4);
-      t1 = Math.min(Math.max(t1 + d1, lo), hi); t2 = Math.min(Math.max(t2 + d2, lo), hi);
-      if (Math.max(Math.abs(d1), Math.abs(d2)) < 1e-7) break;
-    }
-    return [Math.exp(t1), Math.exp(t2)];
-  }
-  const sig = x => 1 / (1 + Math.exp(-x));
-  const logit = p => { p = Math.min(Math.max(p, 1e-4), 1 - 1e-4); return Math.log(p / (1 - p)); };
-  // 2,5 Alt/Üst oranı olmayan maçlar için 2,5 Üst ihtimali tahmini (lig seviyesi + 1X2). w: 6 katsayı
-  function puOnsel(p1, px, p2, ligOrani, w) {
-    const f = [1, logit(ligOrani == null ? 0.5 : ligOrani), px, (p1 - p2) * (p1 - p2), Math.abs(p1 - p2), Math.max(p1, p2)];
-    let z = 0; for (let i = 0; i < 6; i++) z += f[i] * w[i];
-    return sig(z);
-  }
-  // ham oranlardan (1,X,2 ve varsa Üst, Alt) beklenen gol
-  function oranlardanLambda(o1, ox, o2, ou, oa, kat, ligUstOrani) {
-    const [p1, px, p2] = margGuc([o1, ox, o2]);
-    const pu = ou && oa ? margGuc([ou, oa])[0] : null;
-    const on = pu == null ? puOnsel(p1, px, p2, ligUstOrani, kat.pu_onsel_w) : null;
-    return lambdaUydur(p1, px, p2, pu, { rho: kat.rho, kappa: kat.kappa, puOnsel: on });
-  }
-
-  // ------------------------------------------------------------------ korner / kart (negatif binom)
-  // oz: [h_atan, h_yiyen, d_atan, d_yiyen, lig_toplam] (null olabilir); t: kat.c ya da kat.k; lig: lig kodu
-  function kkOrtalama(oz, lh, la, lig, t) {
-    if (!oz || !t) return null;
-    const c = t.lig[lig]; if (c === undefined) return null;
-    const x = [lh + la, Math.abs(lh - la), lh, la, oz[0], oz[1], oz[2], oz[3], oz[4]];
-    let z = t.b + c;
-    for (let i = 0; i < 9; i++) { if (x[i] == null || Number.isNaN(x[i])) continue; z += t.w[i] * (x[i] - t.ort[i]) / t.sd[i]; }
-    return Math.exp(Math.min(Math.max(z, -5), 5));
-  }
-  // P(Y = k), k = 0..kmax; Var = mu + alfa mu^2
-  function nbTablo(mu, alfa, kmax) {
-    kmax = kmax || 40;
-    const r = 1 / alfa, p = r / (r + mu), o = new Float64Array(kmax + 1);
-    o[0] = Math.pow(p, r);
-    for (let k = 0; k < kmax; k++) o[k + 1] = o[k] * (k + r) / (k + 1) * (1 - p);
-    return o;
-  }
-  const kumulatif = d => { const c = new Float64Array(d.length); let s = 0; for (let i = 0; i < d.length; i++) { s += d[i]; c[i] = s; } return c; };
-  const KORNER = [["K75U", 8, 1], ["K85U", 9, 1], ["K85A", 9, 0], ["K95U", 10, 1], ["K95A", 10, 0], ["K105U", 11, 1], ["K105A", 11, 0], ["K115A", 12, 0]];
-  const KART = [["C25U", 3, 1], ["C35U", 4, 1], ["C35A", 4, 0], ["C45U", 5, 1], ["C45A", 5, 0], ["C55U", 6, 1], ["C55A", 6, 0]];
-  function kkPazarlar(mu, alfa, liste, out) {
-    const c = kumulatif(nbTablo(mu, alfa));
-    for (const [kod, esik, ust] of liste) { const p = 1 - c[esik - 1]; out[kod] = ust ? p : 1 - p; }
-  }
-
-  // ------------------------------------------------------------------ gol pazarları (51 pazarın gol / yarı bölümü)
-  function temelPazarlar(lh, la, kat, mc, mk) {
-    const rho = kat.rho, kappa = kat.kappa, fh = kat.fh, fa = kat.fa;
-    const o = ozet(matris(lh, la, rho, kappa)), out = {};
-    const T = o.top, evc = kumulatif(o.ev), dpc = kumulatif(o.dp), c = kumulatif(T);
-    out.MS1 = o.p1; out.MSX = o.px; out.MS2 = o.p2; out.CS1X = o.p1 + o.px; out.CSX2 = o.px + o.p2; out.CS12 = o.p1 + o.p2;
-    for (const [k, i] of [[15, 1], [25, 2], [35, 3], [45, 4]]) { out["A" + k] = c[i]; out["U" + k] = 1 - c[i]; }
-    const kgv = 1 - o.ev[0] - o.dp[0] + o.m00; out.KGV = kgv; out.KGY = 1 - kgv;
-    out.EV05A = evc[0]; out.EV05U = 1 - evc[0]; out.EV15A = evc[1]; out.EV15U = 1 - evc[1]; out.EV25U = 1 - evc[2];
-    out.DEP05A = dpc[0]; out.DEP05U = 1 - dpc[0]; out.DEP15A = dpc[1]; out.DEP15U = 1 - dpc[1]; out.DEP25U = 1 - dpc[2];
-    // ilk yarı: bağımsız Poisson (düzeltmesiz, normalleştirilmemiş), ikinci yarı toplamı ~ Poisson
-    const Mh = matris(lh * fh, la * fa, 0, 1, false);   // yalnızca bağımsız çarpım (Python ile aynı: düzeltmesiz, normalleştirilmemiş)
-    const h = ozet(Mh), ch = kumulatif(h.top);
-    out.IY1 = h.p1; out.IYX = h.px; out.IY2 = h.p2;
-    out.IY05A = ch[0]; out.IY05U = 1 - ch[0]; out.IY15A = ch[1]; out.IY15U = 1 - ch[1];
-    out.IYKGV = (1 - h.ev[0]) * (1 - h.dp[0]);
-    const l2 = lh * (1 - fh) + la * (1 - fa), e0 = Math.exp(-l2);
-    out.IY2Y05U = 1 - e0; out.IY2Y15U = 1 - e0 * (1 + l2);
-    if (mc != null && kat.c) kkPazarlar(mc, kat.c.alfa, KORNER, out);
-    if (mk != null && kat.k) kkPazarlar(mk, kat.k.alfa, KART, out);
-    return out;
-  }
-
-  // ------------------------------------------------------------------ birleşik / ek pazarlar
-  function skellam(l1, l2) {                       // iki bağımsız Poisson farkı; indeks d + 12 (d = -12..12)
-    const p1 = pmfSatir(l1), p2 = pmfSatir(l2), o = new Float64Array(25);
-    for (let h = 0; h < G; h++) for (let a = 0; a < G; a++) o[h - a + 12] += p1[h] * p2[a];
-    return o;
-  }
-  function genisPazarlar(lh, la, kat) {
-    const rho = kat.rho, kappa = kat.kappa, fh = kat.fh, fa = kat.fa;
-    const M = matris(lh, la, rho, kappa), out = {};
-    const topM = (f) => { let s = 0; for (let h = 0; h < G; h++) for (let a = 0; a < G; a++) if (f(h, a)) s += M[h * G + a]; return s; };
-    const sonuc = { "1": (h, a) => h > a, "X": (h, a) => h === a, "2": (h, a) => h < a };
-    const u25 = (h, a) => h + a >= 3, a25 = (h, a) => h + a <= 2, kgv = (h, a) => h > 0 && a > 0, kgy = (h, a) => h === 0 || a === 0;
-    for (const s of ["1", "X", "2"]) {
-      const f = sonuc[s];
-      out["MS" + s + "_U25"] = topM((h, a) => f(h, a) && u25(h, a)); out["MS" + s + "_A25"] = topM((h, a) => f(h, a) && a25(h, a));
-      out["MS" + s + "_KGV"] = topM((h, a) => f(h, a) && kgv(h, a)); out["MS" + s + "_KGY"] = topM((h, a) => f(h, a) && kgy(h, a));
-    }
-    for (const [ad, f] of [["1X", (h, a) => h >= a], ["X2", (h, a) => h <= a], ["12", (h, a) => h !== a]]) {
-      out[ad + "_U25"] = topM((h, a) => f(h, a) && u25(h, a)); out[ad + "_A25"] = topM((h, a) => f(h, a) && a25(h, a));
-    }
-    out.KGV_U25 = topM((h, a) => kgv(h, a) && u25(h, a)); out.KGV_A25 = topM((h, a) => kgv(h, a) && a25(h, a));
-    out.KGY_U25 = topM((h, a) => kgy(h, a) && u25(h, a)); out.KGY_A25 = topM((h, a) => kgy(h, a) && a25(h, a));
-    out.TG01 = topM((h, a) => h + a <= 1); out.TG23 = topM((h, a) => h + a >= 2 && h + a <= 3);
-    out.TG46 = topM((h, a) => h + a >= 4 && h + a <= 6); out.TG7P = topM((h, a) => h + a >= 7);
-    out.TEK = 0.5; out.CIFT = 0.5;                 // model tek/çift için bilgi eklemiyor (gerçek oran ≈ %50)
-    out.A05 = topM((h, a) => h + a === 0); out.U05 = 1 - out.A05;
-    out.U55 = topM((h, a) => h + a >= 6); out.A55 = 1 - out.U55;
-    for (const hn of [-2, -1, 1, 2]) {
-      const ad = "HND" + (hn < 0 ? "m" : "p") + Math.abs(hn);
-      out[ad + "_1"] = topM((h, a) => h + hn - a > 0); out[ad + "_X"] = topM((h, a) => h + hn - a === 0); out[ad + "_2"] = topM((h, a) => h + hn - a < 0);
-    }
-    // yarılar (bağımsız Poisson) ve İY/MS
-    const l1h = lh * fh, l1a = la * fa, l2h = lh * (1 - fh), l2a = la * (1 - fa), dm = 12;
-    const D1 = skellam(l1h, l1a), D2 = skellam(l2h, l2a);
-    const sum = (d, a, b) => { let s = 0; for (let i = a; i <= b; i++) s += d[i]; return s; };
-    const P1 = { "1": sum(D1, dm + 1, 2 * dm), "X": D1[dm], "2": sum(D1, 0, dm - 1) };
-    out.Y2_1 = sum(D2, dm + 1, 2 * dm); out.Y2_X = D2[dm]; out.Y2_2 = sum(D2, 0, dm - 1);
-    const c2 = kumulatif(D2);
-    const le = x => { x = Math.max(Math.min(x, dm), -dm - 1); return x < -dm ? 0 : c2[x + dm]; };
-    const ftd = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-    const gruplar = [[0, d => d > 0], [1, d => d === 0], [2, d => d < 0]];
-    for (const [i1, f] of gruplar) for (let d1 = -dm; d1 <= dm; d1++) {
-      if (!f(d1)) continue;
-      const p = D1[d1 + dm];
-      ftd[i1][0] += p * (1 - le(-d1)); ftd[i1][1] += p * (le(-d1) - le(-d1 - 1)); ftd[i1][2] += p * le(-d1 - 1);
-    }
-    const msDc = [out.MS1_U25 + out.MS1_A25, out.MSX_U25 + out.MSX_A25, out.MS2_U25 + out.MS2_A25];
-    const msH = [0, 1, 2].map(j => ftd[0][j] + ftd[1][j] + ftd[2][j]);
-    let tot = 0;
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { ftd[i][j] *= msDc[j] / msH[j]; tot += ftd[i][j]; }
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) out["IYMS_" + "1X2"[i] + "1X2"[j]] = ftd[i][j] / tot;
-    out.IY1X = P1["1"] + P1["X"]; out.IYX2 = P1["X"] + P1["2"]; out.IY12 = P1["1"] + P1["2"];
-    // en çok gol hangi yarıda
-    const t1 = pmfSatir(l1h + l1a), t2 = pmfSatir(l2h + l2a), cc2 = kumulatif(t2);
-    let y1 = 0, ye = 0;
-    for (let k = 0; k < G; k++) { y1 += t1[k] * (k > 0 ? cc2[k - 1] : 0); ye += t1[k] * t2[k]; }
-    out.YARI_1 = y1; out.YARI_E = ye; out.YARI_2 = 1 - y1 - ye;
-    return out;
-  }
-
-  // ------------------------------------------------------------------ NBA (normal dağılım modeli)
-  const NBA = { sM: 13.0, sT: 18.0, sH: 12.1 };
-  function Phi(x) {                                // Abramowitz-Stegun 7.1.26 (hata < 1e-7)
-    const z = Math.abs(x) / Math.SQRT2, t = 1 / (1 + 0.3275911 * z);
-    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z);
-    return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
-  }
-  function PhiInv(p) {                             // Acklam algoritması (göreli hata ~1e-9)
-    p = Math.min(Math.max(p, 1e-9), 1 - 1e-9);
-    const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
-    const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
-    const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
-    const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
-    let x;
-    if (p < 0.02425) { const q = Math.sqrt(-2 * Math.log(p)); x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
-    else if (p > 1 - 0.02425) { const q = Math.sqrt(-2 * Math.log(1 - p)); x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
-    else { const q = p - 0.5, r = q * q; x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
-    return x;
-  }
-  // tamsayı değerli değişken X ~ N(mu, sd): P(X > L) ve P(X < L)  (L: çizgi; yarım sayı, tam sayı ya da çeyrek olabilir)
-  const ustOlasilik = (L, mu, sd) => 1 - Phi((Math.floor(L) + 0.5 - mu) / sd);
-  const altOlasilik = (L, mu, sd) => Phi((Math.ceil(L) - 0.5 - mu) / sd);
-  // m: {o1,o2 (ML), hnd (ev handikabı), hO1,hO2, tot, tO,tU}; dönüş: pazar kodu -> ihtimal (iade hariç koşullu ihtimal)
-  function nbaPazarlar(m) {
-    const { sM, sT, sH } = NBA, out = {};
-    const pml = margGuc([m.o1, m.o2])[0], mu = sM * PhiInv(pml);
-    out.N_MS1 = pml; out.N_MS2 = 1 - pml;
-    let muT = null;
-    if (m.tot != null) {
-      const pu = m.tO && m.tU ? margGuc([m.tO, m.tU])[0] : 0.5;
-      muT = Math.floor(m.tot) + 0.5 + sT * PhiInv(pu);
-      const pUst = ustOlasilik(m.tot, muT, sT), pAlt = altOlasilik(m.tot, muT, sT), push = 1 - pUst - pAlt;
-      out.N_UST = pUst / (1 - push); out.N_ALT = pAlt / (1 - push);
-    }
-    if (m.hnd != null) {
-      const L = -m.hnd;                            // ev kapatır: M > -hnd
-      const pc = ustOlasilik(L, mu, sM), pd = altOlasilik(L, mu, sM), push = 1 - pc - pd;
-      out.N_HEV = pc / (1 - push); out.N_HDEP = pd / (1 - push);
-    }
-    if (muT != null && m.hnd != null) {
-      const muH = (muT + mu) / 2, muA = (muT - mu) / 2, evT = (m.tot - m.hnd) / 2, depT = (m.tot + m.hnd) / 2;
-      const eu = ustOlasilik(evT, muH, sH), ea = altOlasilik(evT, muH, sH), du = ustOlasilik(depT, muA, sH), da = altOlasilik(depT, muA, sH);
-      out.N_EVU = eu / (eu + ea); out.N_EVA = ea / (eu + ea); out.N_DEPU = du / (du + da); out.N_DEPA = da / (du + da);
-    }
-    const F = (a, b) => Phi((b - mu) / sM) - Phi((a - mu) / sM);       // ev lehine fark aralığı (a, b]
-    out.N_E1 = F(0, 5.5); out.N_E6 = F(5.5, 10.5); out.N_E11 = F(10.5, 15.5); out.N_E16 = 1 - Phi((15.5 - mu) / sM);
-    const Fd = (a, b) => Phi((b + mu) / sM) - Phi((a + mu) / sM);      // deplasman lehine
-    out.N_D1 = Fd(0, 5.5); out.N_D6 = Fd(5.5, 10.5); out.N_D11 = Fd(10.5, 15.5); out.N_D16 = 1 - Phi((15.5 + mu) / sM);
-    out.N_TEK = 0.5; out.N_CIFT = 0.5;
-    return out;
-  }
-
-  // NBA beklenen fark (ev - dep) ve beklenen toplam sayı
-  function nbaOrtalamalar(m) {
-    const pml = margGuc([m.o1, m.o2])[0], mu = NBA.sM * PhiInv(pml);
-    let muT = null;
-    if (m.tot != null) { const pu = m.tO && m.tU ? margGuc([m.tO, m.tU])[0] : 0.5; muT = Math.floor(m.tot) + 0.5 + NBA.sT * PhiInv(pu); }
-    return { mu, muT };
-  }
-
-  return { G, margGuc, matris, ozet, lambdaUydur, puOnsel, oranlardanLambda, kkOrtalama, nbTablo, kkPazarlar, temelPazarlar, genisPazarlar,
-    nbaPazarlar, nbaOrtalamalar, Phi, PhiInv, NBA, KORNER, KART, RHO_VARSAYILAN, KAPPA_VARSAYILAN };
-})();
-if (typeof module !== "undefined" && module.exports) module.exports = BOM;
-
-// ============================================================================ pazarlar.js
-// Pazar tanımları: [kod, etiket, grup, gereken alan, sonuç testi]. Sonuç testi geçmiş maçın tuttu / tutmadı bilgisini verir.
-// Gereken alan: "ms" (maç skoru), "iy" (ilk yarı skoru), "korner", "kart", "hnd", "tot", "evT", "depT" (NBA).
-const PAZ = (function () {
-  "use strict";
-  const g = m => m.ms[0] + m.ms[1];
-  const iyT = m => m.iy[0] + m.iy[1];
-  const s1 = m => m.ms[0] > m.ms[1], sX = m => m.ms[0] === m.ms[1], s2 = m => m.ms[0] < m.ms[1];
-  const S = { "1": s1, "X": sX, "2": s2 };
-  const U25 = m => g(m) >= 3, A25 = m => g(m) <= 2, KGV = m => m.ms[0] > 0 && m.ms[1] > 0, KGY = m => m.ms[0] === 0 || m.ms[1] === 0;
-  const TEMEL = [
-    ["MS1", "MS 1", "Maç sonucu", "ms", s1], ["MSX", "MS X", "Maç sonucu", "ms", sX], ["MS2", "MS 2", "Maç sonucu", "ms", s2],
-    ["CS1X", "Çifte şans 1X", "Maç sonucu", "ms", m => m.ms[0] >= m.ms[1]], ["CSX2", "Çifte şans X2", "Maç sonucu", "ms", m => m.ms[0] <= m.ms[1]],
-    ["CS12", "Çifte şans 12", "Maç sonucu", "ms", m => m.ms[0] !== m.ms[1]],
-    ["U15", "1,5 Üst", "Toplam gol", "ms", m => g(m) >= 2], ["A15", "1,5 Alt", "Toplam gol", "ms", m => g(m) <= 1],
-    ["U25", "2,5 Üst", "Toplam gol", "ms", U25], ["A25", "2,5 Alt", "Toplam gol", "ms", A25],
-    ["U35", "3,5 Üst", "Toplam gol", "ms", m => g(m) >= 4], ["A35", "3,5 Alt", "Toplam gol", "ms", m => g(m) <= 3],
-    ["U45", "4,5 Üst", "Toplam gol", "ms", m => g(m) >= 5], ["A45", "4,5 Alt", "Toplam gol", "ms", m => g(m) <= 4],
-    ["KGV", "KG Var", "Karşılıklı gol", "ms", KGV], ["KGY", "KG Yok", "Karşılıklı gol", "ms", KGY],
-    ["EV05U", "Ev 0,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 1], ["EV05A", "Ev 0,5 Alt", "Ev sahibi golü", "ms", m => m.ms[0] === 0],
-    ["EV15U", "Ev 1,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 2], ["EV15A", "Ev 1,5 Alt", "Ev sahibi golü", "ms", m => m.ms[0] <= 1],
-    ["EV25U", "Ev 2,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 3],
-    ["DEP05U", "Dep 0,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 1], ["DEP05A", "Dep 0,5 Alt", "Deplasman golü", "ms", m => m.ms[1] === 0],
-    ["DEP15U", "Dep 1,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 2], ["DEP15A", "Dep 1,5 Alt", "Deplasman golü", "ms", m => m.ms[1] <= 1],
-    ["DEP25U", "Dep 2,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 3],
-    ["IY1", "İY 1", "İlk yarı", "iy", m => m.iy[0] > m.iy[1]], ["IYX", "İY X", "İlk yarı", "iy", m => m.iy[0] === m.iy[1]],
-    ["IY2", "İY 2", "İlk yarı", "iy", m => m.iy[0] < m.iy[1]],
-    ["IY05U", "İY 0,5 Üst", "İlk yarı", "iy", m => iyT(m) >= 1], ["IY05A", "İY 0,5 Alt", "İlk yarı", "iy", m => iyT(m) === 0],
-    ["IY15U", "İY 1,5 Üst", "İlk yarı", "iy", m => iyT(m) >= 2], ["IY15A", "İY 1,5 Alt", "İlk yarı", "iy", m => iyT(m) <= 1],
-    ["IYKGV", "İY KG Var", "İlk yarı", "iy", m => m.iy[0] > 0 && m.iy[1] > 0],
-    ["IY2Y05U", "2. yarı 0,5 Üst", "İkinci yarı", "iy", m => g(m) - iyT(m) >= 1], ["IY2Y15U", "2. yarı 1,5 Üst", "İkinci yarı", "iy", m => g(m) - iyT(m) >= 2],
-    ["K75U", "Korner 7,5 Üst", "Korner", "korner", m => m.korner >= 8], ["K85U", "Korner 8,5 Üst", "Korner", "korner", m => m.korner >= 9],
-    ["K85A", "Korner 8,5 Alt", "Korner", "korner", m => m.korner <= 8], ["K95U", "Korner 9,5 Üst", "Korner", "korner", m => m.korner >= 10],
-    ["K95A", "Korner 9,5 Alt", "Korner", "korner", m => m.korner <= 9], ["K105U", "Korner 10,5 Üst", "Korner", "korner", m => m.korner >= 11],
-    ["K105A", "Korner 10,5 Alt", "Korner", "korner", m => m.korner <= 10], ["K115A", "Korner 11,5 Alt", "Korner", "korner", m => m.korner <= 11],
-    ["C25U", "Kart 2,5 Üst", "Kart", "kart", m => m.kart >= 3], ["C35U", "Kart 3,5 Üst", "Kart", "kart", m => m.kart >= 4],
-    ["C35A", "Kart 3,5 Alt", "Kart", "kart", m => m.kart <= 3], ["C45U", "Kart 4,5 Üst", "Kart", "kart", m => m.kart >= 5],
-    ["C45A", "Kart 4,5 Alt", "Kart", "kart", m => m.kart <= 4], ["C55U", "Kart 5,5 Üst", "Kart", "kart", m => m.kart >= 6],
-    ["C55A", "Kart 5,5 Alt", "Kart", "kart", m => m.kart <= 5]
-  ];
-  // ---- genişletilmiş (birleşik) pazarlar
-  const GENIS = [];
-  const ekle = (kod, etiket, grup, alan, test) => GENIS.push([kod, etiket, grup, alan, test]);
-  for (const s of ["1", "X", "2"]) { const e = "MS " + s;
-    ekle("MS" + s + "_U25", e + " & 2,5 Üst", "Maç sonucu + 2,5 Alt/Üst", "ms", m => S[s](m) && U25(m)); ekle("MS" + s + "_A25", e + " & 2,5 Alt", "Maç sonucu + 2,5 Alt/Üst", "ms", m => S[s](m) && A25(m)); }
-  for (const s of ["1", "X", "2"]) { const e = "MS " + s;
-    ekle("MS" + s + "_KGV", e + " & KG Var", "Maç sonucu + KG", "ms", m => S[s](m) && KGV(m)); ekle("MS" + s + "_KGY", e + " & KG Yok", "Maç sonucu + KG", "ms", m => S[s](m) && KGY(m)); }
-  const CS = { "1X": m => m.ms[0] >= m.ms[1], "X2": m => m.ms[0] <= m.ms[1], "12": m => m.ms[0] !== m.ms[1] };
-  for (const c of ["1X", "X2", "12"]) {
-    ekle(c + "_U25", c + " & 2,5 Üst", "Çifte şans + 2,5 Alt/Üst", "ms", m => CS[c](m) && U25(m)); ekle(c + "_A25", c + " & 2,5 Alt", "Çifte şans + 2,5 Alt/Üst", "ms", m => CS[c](m) && A25(m)); }
-  ekle("KGV_U25", "KG Var & 2,5 Üst", "KG + 2,5 Alt/Üst", "ms", m => KGV(m) && U25(m)); ekle("KGV_A25", "KG Var & 2,5 Alt", "KG + 2,5 Alt/Üst", "ms", m => KGV(m) && A25(m));
-  ekle("KGY_U25", "KG Yok & 2,5 Üst", "KG + 2,5 Alt/Üst", "ms", m => KGY(m) && U25(m)); ekle("KGY_A25", "KG Yok & 2,5 Alt", "KG + 2,5 Alt/Üst", "ms", m => KGY(m) && A25(m));
-  ekle("TG01", "0-1 gol", "Toplam gol aralığı", "ms", m => g(m) <= 1); ekle("TG23", "2-3 gol", "Toplam gol aralığı", "ms", m => g(m) >= 2 && g(m) <= 3);
-  ekle("TG46", "4-6 gol", "Toplam gol aralığı", "ms", m => g(m) >= 4 && g(m) <= 6); ekle("TG7P", "7+ gol", "Toplam gol aralığı", "ms", m => g(m) >= 7);
-  ekle("A05", "0,5 Alt", "Ek toplam gol çizgileri", "ms", m => g(m) === 0); ekle("U05", "0,5 Üst", "Ek toplam gol çizgileri", "ms", m => g(m) >= 1);
-  ekle("A55", "5,5 Alt", "Ek toplam gol çizgileri", "ms", m => g(m) <= 5); ekle("U55", "5,5 Üst", "Ek toplam gol çizgileri", "ms", m => g(m) >= 6);
-  ekle("TEK", "Toplam tek", "Tek / çift", "ms", m => g(m) % 2 === 1); ekle("CIFT", "Toplam çift", "Tek / çift", "ms", m => g(m) % 2 === 0);
-  for (const hn of [-2, -1, 1, 2]) {
-    const kod = "HND" + (hn < 0 ? "m" : "p") + Math.abs(hn), et = "(" + (hn > 0 ? "+" : "") + hn + ") ", fk = m => m.ms[0] + hn - m.ms[1];
-    ekle(kod + "_1", et + "1", "Handikaplı maç sonucu (ev sahibine eklenen gol)", "ms", m => fk(m) > 0);
-    ekle(kod + "_X", et + "X", "Handikaplı maç sonucu (ev sahibine eklenen gol)", "ms", m => fk(m) === 0);
-    ekle(kod + "_2", et + "2", "Handikaplı maç sonucu (ev sahibine eklenen gol)", "ms", m => fk(m) < 0);
-  }
-  const ik = m => m.iy[0] - m.iy[1], h2 = m => (m.ms[0] - m.iy[0]) - (m.ms[1] - m.iy[1]), sg = x => x > 0 ? "1" : x < 0 ? "2" : "X";
-  ekle("Y2_1", "2. yarı 1", "İkinci yarı sonucu", "iy", m => h2(m) > 0); ekle("Y2_X", "2. yarı X", "İkinci yarı sonucu", "iy", m => h2(m) === 0);
-  ekle("Y2_2", "2. yarı 2", "İkinci yarı sonucu", "iy", m => h2(m) < 0);
-  ekle("IY1X", "İY 1X", "İlk yarı çifte şans", "iy", m => ik(m) >= 0); ekle("IYX2", "İY X2", "İlk yarı çifte şans", "iy", m => ik(m) <= 0);
-  ekle("IY12", "İY 12", "İlk yarı çifte şans", "iy", m => ik(m) !== 0);
-  for (const a of ["1", "X", "2"]) for (const b of ["1", "X", "2"])
-    ekle("IYMS_" + a + b, "İY " + a + " / MS " + b, "İlk yarı / maç sonucu", "iy", m => sg(ik(m)) === a && sg(m.ms[0] - m.ms[1]) === b);
-  const ty = m => [iyT(m), g(m) - iyT(m)];
-  ekle("YARI_1", "1. yarıda daha çok gol", "Hangi yarıda daha çok gol", "iy", m => { const t = ty(m); return t[0] > t[1]; });
-  ekle("YARI_E", "İki yarıda eşit gol", "Hangi yarıda daha çok gol", "iy", m => { const t = ty(m); return t[0] === t[1]; });
-  ekle("YARI_2", "2. yarıda daha çok gol", "Hangi yarıda daha çok gol", "iy", m => { const t = ty(m); return t[0] < t[1]; });
-
-  // ---- NBA
-  const fark = m => m.ms[0] - m.ms[1];
-  const iade = (v, kosul) => v === 0 ? null : kosul;
-  const bant = (a, b) => m => { const f = fark(m); return f >= a && f <= b; };
-  const NBA = [
-    ["N_MS1", "Ev sahibi kazanır", "Maç sonucu (uzatmalar dahil)", "ms", m => fark(m) > 0, "o1"],
-    ["N_MS2", "Deplasman kazanır", "Maç sonucu (uzatmalar dahil)", "ms", m => fark(m) < 0, "o2"],
-    ["N_HEV", "Ev handikabı kapatır", "Handikap (maçın kendi çizgisi)", "hnd", m => iade(fark(m) + m.hnd, fark(m) + m.hnd > 0), "hO1"],
-    ["N_HDEP", "Deplasman handikabı kapatır", "Handikap (maçın kendi çizgisi)", "hnd", m => iade(fark(m) + m.hnd, fark(m) + m.hnd < 0), "hO2"],
-    ["N_UST", "Toplam Üst", "Toplam sayı (maçın kendi çizgisi)", "tot", m => iade(g(m) - m.tot, g(m) > m.tot), "tO"],
-    ["N_ALT", "Toplam Alt", "Toplam sayı (maçın kendi çizgisi)", "tot", m => iade(g(m) - m.tot, g(m) < m.tot), "tU"],
-    ["N_EVU", "Ev takım toplamı Üst", "Takım sayıları (çizgiden hesaplanan)", "evT", m => iade(m.ms[0] - m.evT, m.ms[0] > m.evT)],
-    ["N_EVA", "Ev takım toplamı Alt", "Takım sayıları (çizgiden hesaplanan)", "evT", m => iade(m.ms[0] - m.evT, m.ms[0] < m.evT)],
-    ["N_DEPU", "Deplasman takım toplamı Üst", "Takım sayıları (çizgiden hesaplanan)", "depT", m => iade(m.ms[1] - m.depT, m.ms[1] > m.depT)],
-    ["N_DEPA", "Deplasman takım toplamı Alt", "Takım sayıları (çizgiden hesaplanan)", "depT", m => iade(m.ms[1] - m.depT, m.ms[1] < m.depT)],
-    ["N_E1", "Ev 1-5 farkla", "Kazanma farkı", "ms", bant(1, 5)], ["N_E6", "Ev 6-10 farkla", "Kazanma farkı", "ms", bant(6, 10)],
-    ["N_E11", "Ev 11-15 farkla", "Kazanma farkı", "ms", bant(11, 15)], ["N_E16", "Ev 16+ farkla", "Kazanma farkı", "ms", bant(16, 999)],
-    ["N_D1", "Deplasman 1-5 farkla", "Kazanma farkı", "ms", bant(-5, -1)], ["N_D6", "Deplasman 6-10 farkla", "Kazanma farkı", "ms", bant(-10, -6)],
-    ["N_D11", "Deplasman 11-15 farkla", "Kazanma farkı", "ms", bant(-15, -11)], ["N_D16", "Deplasman 16+ farkla", "Kazanma farkı", "ms", bant(-999, -16)],
-    ["N_TEK", "Toplam tek", "Tek / çift", "ms", m => g(m) % 2 === 1], ["N_CIFT", "Toplam çift", "Tek / çift", "ms", m => g(m) % 2 === 0]
-  ];
-  function kur(ad, liste) {
-    const PZ = {}; liste.forEach((p, i) => PZ[p[0]] = { label: p[1], grup: p[2], i });
-    return { ad, PAZARLAR: liste, PZ, P: liste.length };
-  }
-  return { futbol: kur("futbol", TEMEL.concat(GENIS)), nba: kur("nba", NBA), TEMEL_SAYI: TEMEL.length };
-})();
-if (typeof module !== "undefined" && module.exports) module.exports = PAZ;
-
 (function () {
   "use strict";
-  try { document.documentElement.lang = "tr"; } catch (e) { }
-  // ================================================================ sabitler
   const LIGLER = {
     E0: "İngiltere Premier Lig", E1: "İngiltere Championship", E2: "İngiltere League One", E3: "İngiltere League Two",
     EC: "İngiltere National League", SC0: "İskoçya Premiership", SC1: "İskoçya Championship", SC2: "İskoçya League One",
     SC3: "İskoçya League Two", D1: "Almanya Bundesliga", D2: "Almanya 2. Bundesliga", I1: "İtalya Serie A", I2: "İtalya Serie B",
     SP1: "İspanya La Liga", SP2: "İspanya La Liga 2", F1: "Fransa Ligue 1", F2: "Fransa Ligue 2", N1: "Hollanda Eredivisie",
-    B1: "Belçika Pro Lig", P1: "Portekiz Liga", T1: "Türkiye Süper Lig", G1: "Yunanistan Süper Lig",
-    USA: "ABD MLS", SWE: "İsveç Allsvenskan", NOR: "Norveç Eliteserien", DNK: "Danimarka Superliga", FIN: "Finlandiya Veikkausliiga", BRA: "Brezilya Série A",
-    CL: "Şampiyonlar Ligi", EL: "Avrupa Ligi", ECL: "Konferans Ligi", NBA: "NBA", HES: "Hesaplayıcı"
+    B1: "Belçika Pro Lig", P1: "Portekiz Liga", T1: "Türkiye Süper Lig", G1: "Yunanistan Süper Lig"
   };
-  const OK_AD = ["Bet365", "Piyasa ortalaması", "Pinnacle", "En yüksek oran", "Pinnacle (kapanış)", "Piyasa ortalaması (kapanış)", "Bahis şirketleri ortalaması"];
-  const mkSpor = (ad, t) => Object.assign({}, t, { ad, TUM: [], FIK: [], SON_GUN: 0, ILK_GUN: 0, GECICI_SAY: 0 });
-  const SP = { futbol: mkSpor("futbol", PAZ.futbol), nba: mkSpor("nba", PAZ.nba) };
-  const sporOf = m => m.lig === "NBA" ? SP.nba : SP.futbol;
   const g = m => m.ms[0] + m.ms[1];
-  const fark = m => m.ms[0] - m.ms[1];
-  const sonucu = (pz, m) => { if (m[pz[3]] == null) return null; const r = pz[4](m); return r == null ? null : !!r; };
-  let KAT = typeof KAT_YEDEK !== "undefined" ? KAT_YEDEK : null;   // modelin katsayıları (veri.json'daki "model" önceliklidir)
+  // [kod, etiket, grup, gereken alan, test, Bet365 oran alanı]
+  const PAZARLAR = [
+    ["MS1", "MS 1", "Maç sonucu", "ms", m => m.ms[0] > m.ms[1], "o1"],
+    ["MSX", "MS X", "Maç sonucu", "ms", m => m.ms[0] === m.ms[1], "ox"],
+    ["MS2", "MS 2", "Maç sonucu", "ms", m => m.ms[0] < m.ms[1], "o2"],
+    ["CS1X", "Çifte şans 1X", "Maç sonucu", "ms", m => m.ms[0] >= m.ms[1]],
+    ["CSX2", "Çifte şans X2", "Maç sonucu", "ms", m => m.ms[0] <= m.ms[1]],
+    ["CS12", "Çifte şans 12", "Maç sonucu", "ms", m => m.ms[0] !== m.ms[1]],
+    ["U15", "1,5 Üst", "Toplam gol", "ms", m => g(m) >= 2],
+    ["A15", "1,5 Alt", "Toplam gol", "ms", m => g(m) <= 1],
+    ["U25", "2,5 Üst", "Toplam gol", "ms", m => g(m) >= 3, "ou"],
+    ["A25", "2,5 Alt", "Toplam gol", "ms", m => g(m) <= 2, "oa"],
+    ["U35", "3,5 Üst", "Toplam gol", "ms", m => g(m) >= 4],
+    ["A35", "3,5 Alt", "Toplam gol", "ms", m => g(m) <= 3],
+    ["U45", "4,5 Üst", "Toplam gol", "ms", m => g(m) >= 5],
+    ["A45", "4,5 Alt", "Toplam gol", "ms", m => g(m) <= 4],
+    ["KGV", "KG Var", "Karşılıklı gol", "ms", m => m.ms[0] > 0 && m.ms[1] > 0],
+    ["KGY", "KG Yok", "Karşılıklı gol", "ms", m => m.ms[0] === 0 || m.ms[1] === 0],
+    ["EV05U", "Ev 0,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 1],
+    ["EV05A", "Ev 0,5 Alt", "Ev sahibi golü", "ms", m => m.ms[0] === 0],
+    ["EV15U", "Ev 1,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 2],
+    ["EV15A", "Ev 1,5 Alt", "Ev sahibi golü", "ms", m => m.ms[0] <= 1],
+    ["EV25U", "Ev 2,5 Üst", "Ev sahibi golü", "ms", m => m.ms[0] >= 3],
+    ["DEP05U", "Dep 0,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 1],
+    ["DEP05A", "Dep 0,5 Alt", "Deplasman golü", "ms", m => m.ms[1] === 0],
+    ["DEP15U", "Dep 1,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 2],
+    ["DEP15A", "Dep 1,5 Alt", "Deplasman golü", "ms", m => m.ms[1] <= 1],
+    ["DEP25U", "Dep 2,5 Üst", "Deplasman golü", "ms", m => m.ms[1] >= 3],
+    ["IY1", "İY 1", "İlk yarı", "iy", m => m.iy[0] > m.iy[1]],
+    ["IYX", "İY X", "İlk yarı", "iy", m => m.iy[0] === m.iy[1]],
+    ["IY2", "İY 2", "İlk yarı", "iy", m => m.iy[0] < m.iy[1]],
+    ["IY05U", "İY 0,5 Üst", "İlk yarı", "iy", m => m.iy[0] + m.iy[1] >= 1],
+    ["IY05A", "İY 0,5 Alt", "İlk yarı", "iy", m => m.iy[0] + m.iy[1] === 0],
+    ["IY15U", "İY 1,5 Üst", "İlk yarı", "iy", m => m.iy[0] + m.iy[1] >= 2],
+    ["IY15A", "İY 1,5 Alt", "İlk yarı", "iy", m => m.iy[0] + m.iy[1] <= 1],
+    ["IYKGV", "İY KG Var", "İlk yarı", "iy", m => m.iy[0] > 0 && m.iy[1] > 0],
+    ["IY2Y05U", "2. yarı 0,5 Üst", "İkinci yarı", "iy", m => g(m) - m.iy[0] - m.iy[1] >= 1],
+    ["IY2Y15U", "2. yarı 1,5 Üst", "İkinci yarı", "iy", m => g(m) - m.iy[0] - m.iy[1] >= 2],
+    ["K75U", "Korner 7,5 Üst", "Korner", "korner", m => m.korner >= 8],
+    ["K85U", "Korner 8,5 Üst", "Korner", "korner", m => m.korner >= 9],
+    ["K85A", "Korner 8,5 Alt", "Korner", "korner", m => m.korner <= 8],
+    ["K95U", "Korner 9,5 Üst", "Korner", "korner", m => m.korner >= 10],
+    ["K95A", "Korner 9,5 Alt", "Korner", "korner", m => m.korner <= 9],
+    ["K105U", "Korner 10,5 Üst", "Korner", "korner", m => m.korner >= 11],
+    ["K105A", "Korner 10,5 Alt", "Korner", "korner", m => m.korner <= 10],
+    ["K115A", "Korner 11,5 Alt", "Korner", "korner", m => m.korner <= 11],
+    ["C25U", "Kart 2,5 Üst", "Kart", "kart", m => m.kart >= 3],
+    ["C35U", "Kart 3,5 Üst", "Kart", "kart", m => m.kart >= 4],
+    ["C35A", "Kart 3,5 Alt", "Kart", "kart", m => m.kart <= 3],
+    ["C45U", "Kart 4,5 Üst", "Kart", "kart", m => m.kart >= 5],
+    ["C45A", "Kart 4,5 Alt", "Kart", "kart", m => m.kart <= 4],
+    ["C55U", "Kart 5,5 Üst", "Kart", "kart", m => m.kart >= 6],
+    ["C55A", "Kart 5,5 Alt", "Kart", "kart", m => m.kart <= 5]
+  ];
+  const PZ = {}; PAZARLAR.forEach((p, i) => PZ[p[0]] = { label: p[1], grup: p[2], i });
+  const sonucu = (pz, m) => (m[pz[3]] == null ? null : !!pz[4](m));
 
-  // ================================================================ tarih
+  // ---------------------------------------------------------------- tarih
   const GMS = 864e5;
   const gunNo = (y, mo, d) => Math.round(Date.UTC(y, mo - 1, d) / GMS);
   const bugun = (() => { const n = new Date(); return gunNo(n.getFullYear(), n.getMonth() + 1, n.getDate()); })();
@@ -684,120 +258,135 @@ if (typeof module !== "undefined" && module.exports) module.exports = PAZ;
   const kisaTarih = gn => { const d = tOf(gn); return String(d.getUTCDate()).padStart(2, "0") + "." + String(d.getUTCMonth() + 1).padStart(2, "0") + "." + String(d.getUTCFullYear()).slice(2); };
   const sezonBasi = gn => { const d = tOf(gn); const y = d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; return gunNo(y, 7, 1); };
 
-  // ================================================================ yardımcılar
+  // ---------------------------------------------------------------- veri
+  function mac(lig, gun, saat, ev, dep, o1, ox, o2, ou, oa, ms, iy, korner, kart) {
+    const s = 1 / o1 + 1 / ox + 1 / o2;
+    const m = { lig, gun, saat: saat || "", ev, dep, o1, ox, o2, ou: ou || null, oa: oa || null,
+      p1: (1 / o1) / s, px: (1 / ox) / s, p2: (1 / o2) / s, pu: null, ms: ms || null, iy: iy || null,
+      korner: korner == null ? null : korner, kart: kart == null ? null : kart };
+    if (ou && oa) { const su = 1 / ou + 1 / oa; m.pu = (1 / ou) / su; }
+    return m;
+  }
+  let TUM = [], GRUP = {}, FIK = [], SON_GUN = 0, ILK_GUN = 0, OLUSTURMA = null;
+  function veriAc(V) {
+    const T = V.takim, L = V.lig, o = x => x ? x / 100 : null;
+    TUM = V.m.map(r => mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[11] / 100, r[12] / 100, r[13] / 100, o(r[14]), o(r[15]),
+      [r[5], r[6]], r[7] == null ? null : [r[7], r[8]], r[9], r[10]));
+    FIK = (V.f || []).map(r => mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[5] / 100, r[6] / 100, r[7] / 100, o(r[8]), o(r[9])));
+    GRUP = {};
+    TUM.forEach(m => (GRUP[m.lig] = GRUP[m.lig] || []).push(m));
+    Object.values(GRUP).forEach(l => l.sort((a, b) => a.gun - b.gun || a.saat.localeCompare(b.saat)));
+    SON_GUN = TUM.reduce((a, m) => Math.max(a, m.gun), 0);
+    ILK_GUN = TUM.reduce((a, m) => Math.min(a, m.gun), Infinity);
+    OLUSTURMA = V.olusturma || null;
+    onekHazirla();
+  }
+  // Her lig için pazar bazında birikimli sayılar: herhangi bir tarihe kadarki lig ortalamasını hızlı vermek için.
+  let ONEK = {};
+  const P = PAZARLAR.length;
+  function onekHazirla() {
+    ONEK = {};
+    for (const [lk, l] of Object.entries(GRUP)) {
+      const N = l.length, n = new Int32Array((N + 1) * P), h = new Int32Array((N + 1) * P);
+      for (let i = 0; i < N; i++) for (let k = 0; k < P; k++) {
+        const s = sonucu(PAZARLAR[k], l[i]);
+        n[(i + 1) * P + k] = n[i * P + k] + (s == null ? 0 : 1); h[(i + 1) * P + k] = h[i * P + k] + (s ? 1 : 0);
+      }
+      ONEK[lk] = { n, h };
+    }
+  }
+  function ligOrt(lk, bitis, k) { const o = ONEK[lk]; if (!o) return null; const n = o.n[bitis * P + k]; return n ? o.h[bitis * P + k] / n : null; }
+  const ONCUL = 8; // az veride tahmini lig ortalamasına çeken ağırlık
+
+  // ---------------------------------------------------------------- analiz
+  function mesafe(t, c, tol) {
+    const d1 = Math.abs(t.p1 - c.p1), d2 = Math.abs(t.p2 - c.p2);
+    if (d1 > tol || d2 > tol) return -1;
+    let d = Math.max(d1, d2, Math.abs(t.px - c.px));
+    if (t.pu != null) { if (c.pu == null) return -1; const du = Math.abs(t.pu - c.pu); if (du > tol) return -1; d = Math.max(d, du); }
+    return d;
+  }
+  function analiz(t, liste, bitis, A) {
+    const yakin = [], genis = [], tol = A.tol, tol2 = A.tol * 2;
+    for (let i = 0; i < bitis; i++) {
+      const c = liste[i]; const d = mesafe(t, c, tol2);
+      if (d < 0) continue;
+      genis.push(c); if (d <= tol) yakin.push([d, c]);
+    }
+    yakin.sort((a, b) => a[0] - b[0] || b[1].gun - a[1].gun);
+    const benzer = yakin.slice(0, A.max).map(x => x[1]);
+    const sec = new Set(benzer);
+    const dis = genis.filter(c => !sec.has(c));
+    const pazar = PAZARLAR.map((pz, k) => {
+      let n = 0, h = 0; for (const c of benzer) { const s = sonucu(pz, c); if (s != null) { n++; h += s; } }
+      let gn = 0, gh = 0; for (const c of dis) { const s = sonucu(pz, c); if (s != null) { gn++; gh += s; } }
+      const tn = n + gn, lo = ligOrt(t.lig, bitis, k);
+      const tah = lo == null ? (tn ? (h + gh) / tn : null) : (h + gh + ONCUL * lo) / (tn + ONCUL);
+      return { kod: pz[0], n, h, normal: gn ? gh / gn : null, ng: gn, tah, tn, lo,
+        sinyal: n >= A.min && n > 0 && h / n >= A.esik - 1e-9 };
+    });
+    return { benzer, pazar };
+  }
+  function bitisBul(l, gun) { let lo = 0, hi = l.length; while (lo < hi) { const md = (lo + hi) >> 1; if (l[md].gun < gun) lo = md + 1; else hi = md; } return lo; }
+
+  function backtest(A) {
+    const testBas = gunNo(tOf(sezonBasi(ILK_GUN)).getUTCFullYear() + 1, 7, 1);
+    const top = {}; PAZARLAR.forEach(p => top[p[0]] = { s: 0, t: 0, nt: 0, pt: 0, pn: 0, kar: 0, on: 0, tn: 0, th: 0 });
+    const lig = {}; let testMac = 0;
+    for (const [lk, liste] of Object.entries(GRUP)) {
+      let i0 = 0;
+      for (let i = 0; i < liste.length; i++) {
+        const t = liste[i];
+        while (i0 < i && liste[i0].gun < t.gun) i0++;
+        if (t.gun < testBas) continue;
+        testMac++;
+        for (const pz of PAZARLAR) { const s = sonucu(pz, t); if (s != null) { top[pz[0]].tn++; top[pz[0]].th += s; } }
+        if (!i0) continue;
+        const { pazar } = analiz(t, liste, i0, A);
+        pazar.forEach((p, k) => {
+          if (!p.sinyal) return;
+          const pz = PAZARLAR[k]; const s = sonucu(pz, t); if (s == null) return;
+          const a = top[pz[0]]; a.s++; a.t += s; a.nt += p.normal == null ? 1 : p.normal;
+          const oran = pz[5] ? t[pz[5]] : null;
+          if (oran) { a.on++; a.pt += 1 / oran / (pz[5] === "ou" || pz[5] === "oa" ? (1 / t.ou + 1 / t.oa) : (1 / t.o1 + 1 / t.ox + 1 / t.o2)); a.pn++; a.kar += s ? oran - 1 : -1; }
+          const l = lig[lk] = lig[lk] || { s: 0, t: 0, nt: 0 }; l.s++; l.t += s; l.nt += p.normal == null ? 1 : p.normal;
+        });
+      }
+    }
+    return { testMac, baslangic: testBas,
+      satirlar: PAZARLAR.map(pz => { const a = top[pz[0]]; return { kod: pz[0], sinyal: a.s, tuttu: a.t, oran: a.s ? a.t / a.s : null,
+        normal: a.s ? a.nt / a.s : null, genel: a.tn ? a.th / a.tn : null, piyasa: a.pn ? a.pt / a.pn : null, oranli: a.on, kar: a.on ? a.kar : null }; }),
+      ligler: Object.entries(lig).map(([k, v]) => ({ lig: k, sinyal: v.s, tuttu: v.t, oran: v.t / v.s, normal: v.nt / v.s })) };
+  }
+
+  // ---------------------------------------------------------------- yardımcılar
   const $ = id => document.getElementById(id);
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const virgul = x => x == null ? "–" : Number(x).toFixed(2).replace(".", ",");
-  const ondalik = (x, n) => x == null ? "–" : Number(x).toFixed(n == null ? 1 : n).replace(".", ",");
-  const cizgi = x => x == null ? "–" : (x > 0 ? "+" : "") + String(x).replace(".", ",");
   const yuzde = x => x == null ? "–" : "%" + Math.round(x * 100);
-  const yuzde1 = x => x == null ? "–" : "%" + (x * 100).toFixed(1).replace(".", ",");
   const binlik = x => Number(x).toLocaleString("tr-TR");
   const adil = p => p == null || p <= 0 ? "–" : virgul(Math.max(1.01, 1 / p));
   const sonucIdx = m => m.ms[0] > m.ms[1] ? 0 : m.ms[0] === m.ms[1] ? 1 : 2;
   const saklaAl = (k, v) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : v; } catch (e) { return v; } };
   const saklaYaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
-  const oranOku = s => { const x = Number(String(s == null ? "" : s).trim().replace(",", ".")); return x > 1 && isFinite(x) ? x : null; };
-  const bekle = () => new Promise(r => setTimeout(r, 0));
 
-  // ================================================================ veri
-  function mac(lig, gun, saat, ev, dep, o1, ox, o2, ou, oa, ms, iy, korner, kart, gecici, ok) {
-    return { lig, gun, saat: saat || "", ev, dep, o1, ox, o2, ou: ou || null, oa: oa || null, ms: ms || null, iy: iy || null,
-      korner: korner == null ? null : korner, kart: kart == null ? null : kart, gecici: !!gecici, ok: ok == null ? 0 : ok,
-      lh: null, la: null, mc: null, mk: null, oz: null };
-  }
-  function nbaMac(gun, saat, ev, dep, ml1, ml2, hnd10, hO1, hO2, tot10, tO, tU, skor) {
-    const o = x => x ? x / 100 : null, hnd = hnd10 == null ? null : hnd10 / 10, tot = tot10 == null ? null : tot10 / 10;
-    return { lig: "NBA", gun, saat: saat || "", ev, dep, o1: o(ml1), o2: o(ml2), ox: null, hnd, hO1: o(hO1), hO2: o(hO2), tot, tO: o(tO), tU: o(tU),
-      evT: tot != null && hnd != null ? (tot - hnd) / 2 : null, depT: tot != null && hnd != null ? (tot + hnd) / 2 : null,
-      ms: skor || null, iy: null, korner: null, kart: null, gecici: false, ok: 6 };
-  }
-  const mKey = m => m.lig + "|" + m.gun + "|" + m.ev + "|" + m.dep;
-  let OLUSTURMA = null, ODDS_API = null, SURUM = 1;
-  function veriAc(V) {
-    const T = V.takim, L = V.lig, o = x => x ? x / 100 : null;
-    const F = SP.futbol, N = SP.nba;
-    SURUM = V.surum || 1;
-    if (V.model) KAT = V.model;
-    const sonuclu = (r, gec) => {
-      const m = mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[11] / 100, r[12] / 100, r[13] / 100, o(r[14]), o(r[15]),
-        [r[5], r[6]], r[7] == null ? null : [r[7], r[8]], r[9], r[10], gec, r[16]);
-      if (r.length > 21) { m.lh = r[21]; m.la = r[22]; m.mc = r[23]; m.mk = r[24]; }
-      return m;
-    };
-    F.TUM = V.m.map(r => sonuclu(r, false));
-    const var_ = new Set(F.TUM.map(mKey));
-    const gec = (V.g || []).map(r => sonuclu(r, true)).filter(m => !var_.has(mKey(m)));
-    F.GECICI_SAY = gec.length; gec.forEach(m => { F.TUM.push(m); var_.add(mKey(m)); });
-    F.FIK = (V.f || []).map(r => {
-      const m = mac(L[r[0]], r[1], r[2], T[r[3]], T[r[4]], r[5] / 100, r[6] / 100, r[7] / 100, o(r[8]), o(r[9]), null, null, null, null, false, r[10]);
-      if (r.length > 11) { m.lh = r[11]; m.la = r[12]; m.mc = r[13]; m.mk = r[14]; m.oz = r[15] || null; }
-      return m;
-    }).filter(m => !var_.has(mKey(m)));
-    const nb = V.nba || { m: [], f: [] };
-    N.TUM = nb.m.map(r => nbaMac(r[0], r[1], T[r[2]], T[r[3]], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], [r[4], r[5]]));
-    N.FIK = nb.f.map(r => nbaMac(r[0], r[1], T[r[2]], T[r[3]], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], null));
-    OLUSTURMA = V.olusturma || null; ODDS_API = V.odds_api || null;
-    for (const S of [F, N]) {
-      S.TUM.sort((a, b) => a.gun - b.gun || a.saat.localeCompare(b.saat));
-      S.SON_GUN = S.TUM.reduce((a, m) => Math.max(a, m.gun), 0);
-      S.ILK_GUN = S.TUM.reduce((a, m) => Math.min(a, m.gun), Infinity);
-    }
-  }
+  // ---------------------------------------------------------------- ayarlar
+  const A = Object.assign({ tol: 0.025, max: 10, min: 4, esik: 1 }, saklaAl("bob-ayar", {}));
+  $("a-tol").value = String(A.tol); $("a-max").value = String(A.max); $("a-min").value = String(A.min); $("a-esik").value = String(A.esik);
+  ["a-tol", "a-max", "a-min", "a-esik"].forEach(id => $(id).addEventListener("change", () => {
+    A.tol = Number($("a-tol").value); A.max = Number($("a-max").value); A.min = Number($("a-min").value); A.esik = Number($("a-esik").value);
+    saklaYaz("bob-ayar", A); onbellek.clear(); listeHazirla(); btBaslat();
+  }));
 
-  // ================================================================ model hesapları
-  // Maçın model değerleri: {lh, la, mc, mk}. ozel: kullanıcının girdiği {o1, ox, o2, ou, oa} (varsa onlardan yeniden hesaplanır)
-  function modelDegerleri(m, ozel) {
-    if (!KAT) return null;
-    if (ozel) {
-      const [lh, la] = BOM.oranlardanLambda(ozel.o1, ozel.ox, ozel.o2, ozel.ou, ozel.oa, KAT, m.oz ? m.oz[2] : null);
-      return { lh, la, mc: m.oz ? BOM.kkOrtalama(m.oz[0], lh, la, m.lig, KAT.c) : null, mk: m.oz ? BOM.kkOrtalama(m.oz[1], lh, la, m.lig, KAT.k) : null };
-    }
-    if (m.lh == null) {      // veri dosyasında model değeri yoksa oranlardan hesapla (korner/kart olmadan)
-      const [lh, la] = BOM.oranlardanLambda(m.o1, m.ox, m.o2, m.ou, m.oa, KAT, m.oz ? m.oz[2] : null);
-      m.lh = lh; m.la = la;
-    }
-    return { lh: m.lh, la: m.la, mc: m.mc, mk: m.mk };
-  }
-  // liste için: önbellekli temel pazar ihtimalleri
-  function temelOl(m) {
-    if (m._t !== undefined) return m._t;
-    let r = null;
-    if (m.lig === "NBA") r = BOM.nbaPazarlar(m);
-    else { const d = modelDegerleri(m, null); if (d) r = BOM.temelPazarlar(d.lh, d.la, KAT, d.mc, d.mk); }
-    m._t = r; return r;
-  }
-  function genisOl(m) {
-    if (m._g !== undefined) return m._g;
-    let r = null; const d = m.lig === "NBA" ? null : modelDegerleri(m, null);
-    if (d) r = BOM.genisPazarlar(d.lh, d.la, KAT);
-    m._g = r; return r;
-  }
-  function ihtimal(m, kod) {
-    const t = temelOl(m); if (!t) return null;
-    if (kod in t) return t[kod];
-    const gn = genisOl(m); return gn && kod in gn ? gn[kod] : null;
-  }
-  function piyasaIhtimali(m) {       // marjı çıkarılmış piyasa ihtimalleri
-    if (m._p) return m._p;
-    const p = { };
-    if (m.lig === "NBA") { const q = BOM.margGuc([m.o1, m.o2]); p.p1 = q[0]; p.p2 = q[1]; }
-    else { const q = BOM.margGuc([m.o1, m.ox, m.o2]); p.p1 = q[0]; p.px = q[1]; p.p2 = q[2]; if (m.ou && m.oa) p.pu = BOM.margGuc([m.ou, m.oa])[0]; }
-    m._p = p; return p;
-  }
+  // ---------------------------------------------------------------- filtreler
+  const fp = $("f-pazar");
+  fp.append(new Option("Seçilmedi", ""));
+  let og = null;
+  PAZARLAR.forEach(p => { if (!og || og.label !== p[2]) { og = document.createElement("optgroup"); og.label = p[2]; fp.append(og); } og.append(new Option(p[1], p[0])); });
+  const F = Object.assign({ pazar: "", sira: "tarih" }, saklaAl("bob-filtre", {}));
+  fp.value = PZ[F.pazar] ? F.pazar : ""; $("f-sira").value = F.sira;
 
-  // ================================================================ durum ve filtreler
-  const F = Object.assign({ pazar: {}, sira: "tarih", min: "" }, saklaAl("bob-filtre3", {}));
-  if (typeof F.pazar !== "object" || !F.pazar) F.pazar = {};
-  let C = SP[saklaAl("bob-spor", "futbol")] || SP.futbol;
   let gorunum = "g";
-  const seciliPazar = () => C.PZ[F.pazar[C.ad]] ? F.pazar[C.ad] : "";
-  function pazarSecimi() {
-    const fp = $("f-pazar"); fp.textContent = ""; fp.append(new Option("Seçilmedi", ""));
-    let og = null;
-    C.PAZARLAR.forEach(p => { if (!og || og.label !== p[2]) { og = document.createElement("optgroup"); og.label = p[2]; fp.append(og); } og.append(new Option(p[1], p[0])); });
-    fp.value = seciliPazar(); $("f-sira").value = F.sira; $("f-min").value = F.min;
-  }
   const HIZLI = {
     g: [["tum", "Tümü"], ["bugun", "Bugün"], ["yarin", "Yarın"], ["3", "3 gün"], ["7", "7 gün"], ["ozel", "Özel aralık"]],
     p: [["7", "Son 7 gün"], ["dun", "Dün"], ["30", "Son 30 gün"], ["sezon", "Bu sezon"], ["ozel", "Özel aralık"]]
@@ -805,12 +394,12 @@ if (typeof module !== "undefined" && module.exports) module.exports = PAZ;
   function hizliUygula(k) {
     let bas, bit;
     if (gorunum === "g") {
-      const son = C.FIK.reduce((a, m) => Math.max(a, m.gun), bugun);
+      const son = FIK.reduce((a, m) => Math.max(a, m.gun), bugun);
       if (k === "bugun") { bas = bit = bugun; } else if (k === "yarin") { bas = bit = bugun + 1; }
       else if (k === "3") { bas = bugun; bit = bugun + 2; } else if (k === "7") { bas = bugun; bit = bugun + 6; }
       else { bas = bugun; bit = Math.max(son, bugun); }
     } else {
-      const son = C.SON_GUN || bugun - 1;
+      const son = SON_GUN || bugun - 1;
       if (k === "dun") { bas = bit = Math.min(bugun - 1, son); } else if (k === "30") { bas = son - 29; bit = son; }
       else if (k === "sezon") { bas = sezonBasi(son); bit = son; } else { bas = son - 6; bit = son; }
     }
@@ -818,378 +407,215 @@ if (typeof module !== "undefined" && module.exports) module.exports = PAZ;
   }
   function hizliDoldur() {
     const s = $("f-hizli"); s.textContent = "";
-    HIZLI[gorunum === "h" ? "g" : gorunum].forEach(([v, t]) => s.append(new Option(t, v)));
-    s.value = HIZLI[gorunum === "h" ? "g" : gorunum][0][0]; hizliUygula(s.value);
+    HIZLI[gorunum].forEach(([v, t]) => s.append(new Option(t, v)));
+    s.value = HIZLI[gorunum][0][0]; hizliUygula(s.value);
   }
   $("f-hizli").addEventListener("change", e => { if (e.target.value !== "ozel") { hizliUygula(e.target.value); listeHazirla(); } });
   ["f-bas", "f-bit"].forEach(id => $(id).addEventListener("change", () => { $("f-hizli").value = "ozel"; listeHazirla(); }));
-  ["f-lig", "f-ara"].forEach(id => $(id).addEventListener("input", ciz));
-  $("f-pazar").addEventListener("change", e => {
-    F.pazar[C.ad] = e.target.value;
-    if (!e.target.value) { if (F.sira === "ihtimal") { F.sira = "tarih"; $("f-sira").value = "tarih"; } F.min = ""; $("f-min").value = ""; }
-    saklaYaz("bob-filtre3", F); ciz();
-  });
-  $("f-sira").addEventListener("change", e => { F.sira = e.target.value; saklaYaz("bob-filtre3", F); ciz(); });
-  $("f-min").addEventListener("change", e => { F.min = e.target.value; saklaYaz("bob-filtre3", F); ciz(); });
-  function sekmeIsaretle() { for (const k of ["g", "p", "h"]) $("tab-" + k).setAttribute("aria-selected", String(gorunum === k)); }
+  ["f-lig", "f-ara", "f-sinyal"].forEach(id => $(id).addEventListener("input", ciz));
+  fp.addEventListener("change", () => { F.pazar = fp.value; if (!F.pazar && F.sira === "ihtimal") { F.sira = "tarih"; $("f-sira").value = "tarih"; } saklaYaz("bob-filtre", F); ciz(); });
+  $("f-sira").addEventListener("change", e => { F.sira = e.target.value; saklaYaz("bob-filtre", F); ciz(); });
   function sekme(v) {
-    gorunum = v; sekmeIsaretle();
-    $("liste-alan").hidden = v === "h"; $("hesap-alan").hidden = v !== "h";
-    if (v === "h") { hesapCiz(); return; }
+    gorunum = v; $("tab-g").setAttribute("aria-selected", String(v === "g")); $("tab-p").setAttribute("aria-selected", String(v === "p"));
     hizliDoldur(); listeHazirla();
   }
   $("tab-g").addEventListener("click", () => sekme("g"));
   $("tab-p").addEventListener("click", () => sekme("p"));
-  $("tab-h").addEventListener("click", () => sekme("h"));
-  function sporSec(ad, ilk) {
-    C = SP[ad]; saklaYaz("bob-spor", ad);
-    $("spor-futbol").setAttribute("aria-pressed", String(ad === "futbol")); $("spor-nba").setAttribute("aria-pressed", String(ad === "nba"));
-    $("tab-h").hidden = ad === "nba";
-    if (ad === "nba" && gorunum === "h") { gorunum = "g"; $("liste-alan").hidden = false; $("hesap-alan").hidden = true; }
-    pazarSecimi(); metaCiz(); kalGrupDoldur();
-    if (!ilk) { if (gorunum !== "h") gorunum = C.FIK.some(m => m.gun >= bugun) || !C.TUM.length ? "g" : "p"; sekmeIsaretle(); if (gorunum !== "h") { hizliDoldur(); listeHazirla(); } kalBaslat(); }
-  }
-  $("spor-futbol").addEventListener("click", () => sporSec("futbol"));
-  $("spor-nba").addEventListener("click", () => sporSec("nba"));
 
-  // ================================================================ liste
+  // ---------------------------------------------------------------- liste
+  const onbellek = new Map();
   let VIEW = [];
+  function analizAl(t) {
+    const k = t.lig + "|" + t.gun + "|" + t.ev + "|" + t.dep + "|" + (t.ms ? 1 : 0);
+    if (onbellek.has(k)) return onbellek.get(k);
+    const l = GRUP[t.lig] || [];
+    const r = analiz(t, l, bitisBul(l, t.gun), A);
+    onbellek.set(k, r); return r;
+  }
   function listeHazirla() {
     const bas = isoGun($("f-bas").value), bit = isoGun($("f-bit").value);
-    const kaynak = gorunum === "g" ? C.FIK.filter(m => m.gun >= bugun) : C.TUM;
-    VIEW = kaynak.filter(m => (bas == null || m.gun >= bas) && (bit == null || m.gun <= bit));
-    $("n-g").textContent = C.FIK.filter(m => m.gun >= bugun).length || "";
-    const fl = $("f-lig"), s = fl.value; fl.textContent = ""; fl.append(new Option(C.ad === "nba" ? "NBA" : "Tüm ligler", ""));
-    if (C.ad !== "nba") [...new Set(VIEW.map(v => v.lig))].sort((a, b) => (LIGLER[a] || a).localeCompare(LIGLER[b] || b, "tr")).forEach(k => fl.append(new Option(LIGLER[k] || k, k)));
+    const kaynak = gorunum === "g" ? FIK.filter(m => m.gun >= bugun) : TUM;
+    const sec = kaynak.filter(m => (bas == null || m.gun >= bas) && (bit == null || m.gun <= bit));
+    VIEW = sec.map(t => Object.assign({ t }, analizAl(t)));
+    $("n-g").textContent = FIK.filter(m => m.gun >= bugun).length || "";
+    const fl = $("f-lig"), s = fl.value; fl.textContent = ""; fl.append(new Option("Tüm ligler", ""));
+    [...new Set(VIEW.map(v => v.t.lig))].sort().forEach(k => fl.append(new Option(LIGLER[k] || k, k)));
     fl.value = [...fl.options].some(o => o.value === s) ? s : "";
-    const b = $("banner"), mesaj = [];
-    if (!KAT) mesaj.push("Model katsayıları bulunamadı; ihtimaller hesaplanamıyor.");
-    if (gorunum === "p") mesaj.push("Geçmiş maçlarda model, maçın oranlarından hesaplanır; kutular gerçek sonuca göre yeşil (tuttu) ya da kırmızı (tutmadı) olur.");
-    if (C.ad === "nba" && C.TUM.length < 300) mesaj.push("NBA geçmişi birikiyor: şu an " + binlik(C.TUM.length) + " maç var. NBA modeli geçmiş maça ihtiyaç duymaz; sadece oranlardan hesaplanır, geçmiş yalnızca doğruluk kontrolü içindir.");
-    b.hidden = !mesaj.length; b.textContent = mesaj.join(" ");
+    const b = $("banner");
+    if (gorunum === "p") { b.hidden = false; b.textContent = "Geçmiş maçlarda her maç, sadece o maçtan önce oynanmış maçlarla analiz edilir. Sinyal etiketleri gerçek sonuca göre yeşil (tuttu) ya da kırmızı (tutmadı)."; }
+    else b.hidden = true;
     ciz();
   }
 
-  function oddBox(lbl, val, on, metin) { const b = el("div", "odd"); b.append(el("small", null, lbl), el("span", on ? "mk on" : null, metin != null ? metin : virgul(val))); return b; }
-  function oranKutulari(f) {
-    const od = el("div", "odds");
-    if (f.lig === "NBA") {
-      const fk = f.ms ? fark(f) : null;
-      od.append(oddBox("Ev", f.o1, fk != null && fk > 0), oddBox("Dep", f.o2, fk != null && fk < 0),
-        oddBox("Handikap", null, f.ms && f.hnd != null && fk + f.hnd > 0, f.hnd == null ? "–" : cizgi(f.hnd)),
-        oddBox("Toplam", null, f.ms && f.tot != null && g(f) > f.tot, f.tot == null ? "–" : String(f.tot).replace(".", ",")));
-      return od;
-    }
-    const s = f.ms ? sonucIdx(f) : -1;
-    [["1", f.o1], ["X", f.ox], ["2", f.o2]].forEach(([l, o], i) => od.append(oddBox(l, o, i === s)));
-    if (f.ou) { const gol = f.ms ? g(f) : null; od.append(oddBox("2,5 Ü", f.ou, gol != null && gol >= 3), oddBox("2,5 A", f.oa, gol != null && gol <= 2)); }
-    return od;
-  }
-  function modelChipleri(f) {
-    const ch = el("div", "chips");
-    if (f.lig === "NBA") {
-      const o = BOM.nbaOrtalamalar(f);
-      const c1 = el("span", "chip model", "Fark " + (o.mu >= 0 ? "ev +" : "dep +") + ondalik(Math.abs(o.mu), 1)); c1.title = "Modelin beklediği sayı farkı";
-      ch.append(c1);
-      if (o.muT != null) { const c2 = el("span", "chip model", "Toplam ~" + ondalik(o.muT, 0)); c2.title = "Modelin beklediği toplam sayı"; ch.append(c2); }
-      return ch;
-    }
-    const d = modelDegerleri(f, null);
-    if (!d) { ch.append(el("span", "chip none", "Model yok")); return ch; }
-    const c1 = el("span", "chip model", "Gol " + ondalik(d.lh, 2) + " – " + ondalik(d.la, 2)); c1.title = "Modelin beklediği gol (ev – deplasman)"; ch.append(c1);
-    if (d.mc != null) { const c = el("span", "chip model", "Korner ~" + ondalik(d.mc, 1)); c.title = "Modelin beklediği toplam korner"; ch.append(c); }
-    if (d.mk != null) { const c = el("span", "chip model", "Kart ~" + ondalik(d.mk, 1)); c.title = "Modelin beklediği toplam kart (sarı + kırmızı)"; ch.append(c); }
-    return ch;
-  }
+  function oddBox(lbl, val, on) { const b = el("div", "odd"); b.append(el("small", null, lbl), el("span", on ? "mk on" : null, virgul(val))); return b; }
 
-  // ---------------------------------------------------------------- maç detayı: pazar tablosu
-  // ozel: kullanıcının girdiği oranlar (futbol); oranlarim: pazar kodu -> yazılan oran (metin); sonuclu: gerçek sonuç sütunu
-  function pazarTablosu(f, ozel, oranlarim) {
-    const S = sporOf(f), sonuclu = !!f.ms;
-    let P = {};
-    if (f.lig === "NBA") P = BOM.nbaPazarlar(f);
-    else { const d = modelDegerleri(f, ozel); if (d) P = Object.assign({}, BOM.temelPazarlar(d.lh, d.la, KAT, d.mc, d.mk), BOM.genisPazarlar(d.lh, d.la, KAT)); }
-    const t = el("table", "pazar"), h = t.createTHead().insertRow();
-    ["Pazar", "Model ihtimali", "Adil oran*", "Senin oranın", "Değer"].concat(sonuclu ? ["Sonuç"] : []).forEach((x, i) => h.append(el("th", i ? "n" : null, x)));
+  function pazarTablo(v) {
+    const t = el("table"); const h = t.createTHead().insertRow();
+    const sonuclu = !!v.t.ms;
+    ["Pazar", "Benzer maçlar", "Tahmini ihtimal", "Lig ortalaması", "Adil oran*", "Bet365"].concat(sonuclu ? ["Sonuç"] : []).forEach((x, i) => h.append(el("th", i ? "n" : null, x)));
     const b = t.createTBody(); let grup = null;
-    S.PAZARLAR.forEach(pz => {
-      const p = P[pz[0]]; if (p == null) return;
-      if (pz[2] !== grup) { grup = pz[2]; const r = b.insertRow(); r.className = "grp"; const c = r.insertCell(); c.colSpan = sonuclu ? 6 : 5; c.textContent = grup; }
-      const r = b.insertRow(); r.dataset.ad = (pz[1] + " " + pz[0]).toLocaleLowerCase("tr");
-      r.insertCell().textContent = pz[1];
+    v.pazar.forEach((p, k) => {
+      if (!p.tn) return;
+      const pz = PAZARLAR[k];
+      if (pz[2] !== grup) { grup = pz[2]; const r = b.insertRow(); r.className = "grp"; const c = r.insertCell(); c.colSpan = sonuclu ? 7 : 6; c.textContent = grup; }
+      const r = b.insertRow(); if (p.sinyal) r.className = "sig";
+      r.insertCell().textContent = pz[1] + (p.sinyal ? " · sinyal" : "");
       const add = (txt, cls) => { const c = r.insertCell(); c.className = "n" + (cls ? " " + cls : ""); c.textContent = txt; return c; };
-      add(yuzde1(p)); add(adil(p), "est");
-      const ci = r.insertCell(); ci.className = "n inp";
-      const inp = el("input"); inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off"; inp.placeholder = "oran"; inp.setAttribute("aria-label", pz[1] + " için kendi oranın");
-      if (oranlarim && oranlarim[pz[0]]) inp.value = oranlarim[pz[0]];
-      ci.append(inp);
-      const cv = add("", "ev");
-      const guncelle = () => {
-        const o = oranOku(inp.value);
-        if (oranlarim) oranlarim[pz[0]] = inp.value;
-        if (o == null) { cv.textContent = ""; cv.className = "n ev"; return; }
-        const ev = p * o - 1;
-        cv.textContent = (ev >= 0 ? "+" : "−") + "%" + (Math.abs(ev) * 100).toFixed(1).replace(".", ",");
-        cv.className = "n ev " + (ev > 0 ? "good" : "bad");
-      };
-      inp.addEventListener("input", guncelle); guncelle();
-      if (sonuclu) { const s = sonucu(pz, f); add(s == null ? (f[pz[3]] == null ? "veri yok" : "iade") : s ? "Tuttu" : "Tutmadı", s == null ? "" : s ? "ok" : "no"); }
+      add(p.n ? p.h + "/" + p.n : "–");
+      add(yuzde(p.tah) + (p.tn < 15 ? " (az veri)" : ""));
+      add(yuzde(p.lo));
+      add(adil(p.tah), "est");
+      add(pz[5] && v.t[pz[5]] ? virgul(v.t[pz[5]]) : "–");
+      if (sonuclu) { const s = sonucu(pz, v.t); add(s == null ? "veri yok" : s ? "Tuttu" : "Tutmadı", s == null ? "" : s ? "ok" : "no"); }
     });
     return t;
   }
-  function tabloFiltre(t, q) {
-    q = q.trim().toLocaleLowerCase("tr");
-    let sonGrup = null, say = 0;
-    const bitir = () => { if (sonGrup) sonGrup.hidden = say === 0; };
-    for (const r of t.tBodies[0].rows) {
-      if (r.classList.contains("grp")) { bitir(); sonGrup = r; say = 0; continue; }
-      const goster = !q || r.dataset.ad.includes(q); r.hidden = !goster; if (goster) say++;
-    }
-    bitir();
-  }
-  function ozetSatiri(f, ozel) {
-    const p = piyasaIhtimali(f), kaynak = OK_AD[f.ok] || "Bet365";
-    if (f.lig === "NBA") {
-      const o = BOM.nbaOrtalamalar(f);
-      return "Piyasa ihtimali: Ev " + yuzde(p.p1) + " · Dep " + yuzde(p.p2) + (f.hnd != null ? " · Ev handikabı " + cizgi(f.hnd) : "") +
-        (f.tot != null ? " · Toplam çizgisi " + String(f.tot).replace(".", ",") : "") + " · Model: beklenen fark ev " + cizgi(Math.round(o.mu * 10) / 10) +
-        (o.muT != null ? ", toplam ~" + ondalik(o.muT, 1) : "") + " · Oranlar: " + kaynak;
-    }
-    const d = modelDegerleri(f, ozel);
-    const q = ozel ? (() => { const x = BOM.margGuc([ozel.o1, ozel.ox, ozel.o2]); const u = ozel.ou && ozel.oa ? BOM.margGuc([ozel.ou, ozel.oa])[0] : null; return { p1: x[0], px: x[1], p2: x[2], pu: u }; })() : p;
-    return (ozel ? "Senin oranlarından marjı çıkarılmış ihtimal: " : "Piyasa ihtimali (marjsız): ") + "1 " + yuzde(q.p1) + " · X " + yuzde(q.px) + " · 2 " + yuzde(q.p2) + (q.pu != null ? " · 2,5 Üst " + yuzde(q.pu) : "") +
-      (d ? " · Model: beklenen gol " + ondalik(d.lh, 2) + " – " + ondalik(d.la, 2) + (d.mc != null ? " · korner ~" + ondalik(d.mc, 1) : "") + (d.mk != null ? " · kart ~" + ondalik(d.mk, 1) : "") : "") +
-      (f.ms && (f.korner != null || f.kart != null) ? " · Gerçekleşen: korner " + (f.korner ?? "–") + " · kart " + (f.kart ?? "–") : "") + (ozel ? "" : " · Oranlar: " + kaynak);
-  }
-  function detayKur(f) {
-    const detay = el("div", "detail"), nba = f.lig === "NBA";
-    const durum = { ozel: null, oranlarim: {} };
-    const ozet = el("div", "muted", ""); detay.append(ozet);
-    if (f.gecici) detay.append(el("div", "muted", "Skor aynı gün football-data.org'dan alındı (geçici). Korner ve kart sayıları, football-data.co.uk sonuçları yayınlayınca eklenecek."));
-    let kap = null, ara = null;
-    const ciz = () => {
-      ozet.textContent = ozetSatiri(f, durum.ozel);
-      const yeni = el("div", "scroll"); yeni.append(pazarTablosu(f, durum.ozel, durum.oranlarim));
-      if (kap) kap.replaceWith(yeni); else detay.append(yeni);
-      kap = yeni; tabloFiltre(kap.firstChild, ara ? ara.value : "");
-    };
-    if (!nba) {
-      const form = el("details", "ozel"), sm = el("summary", null, "Kendi oranlarımı gireyim"); form.append(sm);
-      const govde = el("div", "form"); form.append(govde);
-      const girdi = [["1", "o1", f.o1], ["X", "ox", f.ox], ["2", "o2", f.o2], ["2,5 Üst", "ou", f.ou], ["2,5 Alt", "oa", f.oa]];
-      const alan = {};
-      girdi.forEach(([ad, k, v]) => {
-        const l = el("label", null, "MS " + ad.replace("MS ", "")); if (k === "ou" || k === "oa") l.firstChild.textContent = ad + " ";
-        const i = el("input"); i.type = "text"; i.inputMode = "decimal"; i.autocomplete = "off"; i.placeholder = v ? virgul(v) : "oran"; alan[k] = i; l.append(i); govde.append(l);
-      });
-      const not = el("p", "muted ozel-not", "Bahis şirketinin 1-X-2 (ve varsa 2,5 Alt/Üst) oranlarını yaz; model tüm pazarları bu oranlara göre yeniden hesaplar. Boş bırakılan oranlar yerine maçın kendi oranları kullanılır.");
-      const sifirla = el("button", "btn ikincil", "Sıfırla"); sifirla.type = "button";
-      form.append(not, sifirla); detay.append(form);
-      const degis = () => {
-        const v = k => oranOku(alan[k].value);
-        const o = { o1: v("o1") || f.o1, ox: v("ox") || f.ox, o2: v("o2") || f.o2, ou: v("ou") || f.ou, oa: v("oa") || f.oa };
-        const degisti = ["o1", "ox", "o2", "ou", "oa"].some(k => v(k));
-        durum.ozel = degisti ? o : null; ciz();
-      };
-      Object.values(alan).forEach(i => i.addEventListener("input", degis));
-      sifirla.addEventListener("click", () => { Object.values(alan).forEach(i => { i.value = ""; }); degis(); });
-    }
-    const arama = el("div", "tablo-ara");
-    ara = el("input"); ara.type = "search"; ara.placeholder = "Pazar ara (ör. KG, korner, handikap, 2,5)"; ara.setAttribute("aria-label", "Pazar ara");
-    ara.addEventListener("input", () => kap && tabloFiltre(kap.firstChild, ara.value)); arama.append(ara); detay.append(arama);
-    ciz();
-    const lg = el("div", "legend");
-    lg.append(el("span", null, "Oranlar: " + (nba ? "The Odds API (bahis şirketleri ortalaması)" : OK_AD[f.ok] || "Bet365") + ". Bunlar İddaa oranı değildir."));
-    const e = el("span"); e.append(el("span", "e", "Adil oran*"), " = modelin ihtimalinin tersi (1 ÷ ihtimal); bahis oranı değildir"); lg.append(e);
-    lg.append(el("span", null, "Değer = ihtimal × senin oranın − 1. Artıysa senin oranın modelin adil oranından yüksektir."));
-    detay.append(lg);
-    return detay;
+
+  function benzerTablo(v) {
+    const t = el("table"); const h = t.createTHead().insertRow();
+    ["Tarih", "Maç", "İY", "MS", "1", "X", "2", "2,5 Ü", "2,5 A", "KG", "Korner", "Kart"].forEach((x, i) => h.append(el("th", i >= 2 ? "n" : null, x)));
+    const b = t.createTBody();
+    v.benzer.forEach(m => {
+      const r = b.insertRow(); const s = sonucIdx(m), gol = g(m);
+      r.insertCell().textContent = kisaTarih(m.gun);
+      r.insertCell().textContent = m.ev + " – " + m.dep;
+      const add = (txt, cls) => { const c = r.insertCell(); c.className = "n"; if (cls != null) c.append(el("span", cls, txt)); else c.textContent = txt; };
+      add(m.iy ? m.iy.join("-") : "–"); add(m.ms.join("-"));
+      [m.o1, m.ox, m.o2].forEach((o, i) => add(virgul(o), i === s ? "mk on" : "mk"));
+      add(m.ou ? virgul(m.ou) : "–", gol >= 3 ? "mk on" : "mk"); add(m.oa ? virgul(m.oa) : "–", gol <= 2 ? "mk on" : "mk");
+      add(m.ms[0] > 0 && m.ms[1] > 0 ? "Var" : "Yok"); add(m.korner == null ? "–" : String(m.korner)); add(m.kart == null ? "–" : String(m.kart));
+    });
+    return t;
   }
 
-  function fxSatir(f, tarihli) {
-    const S = sporOf(f), box = el("div", "fx");
+  function fxSatir(v, tarihli) {
+    const f = v.t; const box = el("div", "fx");
     const btn = el("button"); btn.type = "button"; btn.setAttribute("aria-expanded", "false");
     const tm = el("span", "time", f.saat || "–"); if (tarihli) tm.append(el("small", null, kisaTarih(f.gun)));
     btn.append(tm, el("span", "lg", f.lig));
     const tt = el("span", "teams", f.ev + " – " + f.dep);
     if (f.ms) tt.append(el("span", "res", f.ms.join("-") + (f.iy ? " (İY " + f.iy.join("-") + ")" : "")));
-    if (f.gecici) tt.append(el("span", "gec", "geçici"));
-    btn.append(tt, oranKutulari(f));
-    const sp = seciliPazar();
-    if (sp) {
-      const pz = S.PAZARLAR[S.PZ[sp].i], p = ihtimal(f, sp);
+    btn.append(tt);
+    const od = el("div", "odds"); const s = f.ms ? sonucIdx(f) : -1;
+    [["1", f.o1], ["X", f.ox], ["2", f.o2]].forEach(([l, o], i) => od.append(oddBox(l, o, i === s)));
+    if (f.ou) { const gol = f.ms ? g(f) : null; od.append(oddBox("2,5 Ü", f.ou, gol != null && gol >= 3), oddBox("2,5 A", f.oa, gol != null && gol <= 2)); }
+    btn.append(od);
+    if (F.pazar) {
+      const k = PZ[F.pazar].i, p = v.pazar[k], pz = PAZARLAR[k];
       let cls = "pick"; if (f.ms) { const r = sonucu(pz, f); if (r != null) cls += r ? " hit" : " miss"; }
       const pk = el("span", cls);
-      pk.append(el("span", null, pz[1]));
-      const b = el("b"); b.append(yuzde1(p) + " · ", el("span", "e", "adil " + adil(p) + "*")); pk.append(b);
+      pk.append(el("span", null, pz[1] + (p.sinyal ? " · sinyal" : "")));
+      const b = el("b"); b.append(yuzde(p.tah) + " · ", el("span", "e", "adil " + adil(p.tah) + "*")); pk.append(b);
       btn.append(pk);
     } else btn.append(el("span", "pick-bos"));
-    btn.append(modelChipleri(f), el("span", "caret", "›"));
+    const ch = el("div", "chips"); const sg = v.pazar.map((p, k) => [p, k]).filter(x => x[0].sinyal);
+    if (!v.benzer.length) ch.append(el("span", "chip none", "Benzer maç yok"));
+    else if (!sg.length) ch.append(el("span", "chip none", v.benzer.length + " benzer · sinyal yok"));
+    sg.slice(0, 5).forEach(([p, k]) => {
+      let cls = "chip"; if (f.ms) { const r = sonucu(PAZARLAR[k], f); if (r != null) cls += r ? " hit" : " miss"; }
+      ch.append(el("span", cls, PZ[p.kod].label + " " + p.h + "/" + p.n));
+    });
+    if (sg.length > 5) ch.append(el("span", "chip none", "+" + (sg.length - 5)));
+    btn.append(ch, el("span", "caret", "›"));
     box.append(btn);
     let detay = null;
     btn.addEventListener("click", () => {
       const acik = box.classList.toggle("open"); btn.setAttribute("aria-expanded", String(acik));
-      if (acik && !detay) { detay = detayKur(f); box.append(detay); }
+      if (acik && !detay) {
+        detay = el("div", "detail");
+        detay.append(el("div", "muted", "Piyasa ihtimali (Bet365): 1 " + yuzde(f.p1) + " · X " + yuzde(f.px) + " · 2 " + yuzde(f.p2) +
+          (f.pu != null ? " · 2,5 Üst " + yuzde(f.pu) : "") + (f.ms ? " · Korner " + (f.korner ?? "–") + " · Kart " + (f.kart ?? "–") : "")));
+        const lg = el("div", "legend");
+        lg.append(el("span", null, "Bet365 = gerçek bahis oranı"));
+        const e = el("span"); e.append(el("span", "e", "Adil oran*"), " = motorun tahmini, bahis oranı değil"); lg.append(e);
+        lg.append(el("span", null, "Benzer maçlar = en yakın " + A.max + " maçta tutan"));
+        detay.append(lg);
+        if (v.benzer.length) {
+          const s1 = el("div", "scroll"); s1.append(pazarTablo(v));
+          const s2 = el("div", "scroll"); s2.append(benzerTablo(v));
+          detay.append(s1, el("h3", "muted", "Benzer oranlı geçmiş maçlar"), s2);
+        } else detay.append(el("div", "muted", "Bu ligde tolerans içinde benzer oranlı geçmiş maç bulunamadı."));
+        box.append(detay);
+      }
       if (detay) detay.hidden = !acik;
     });
     return box;
   }
 
-  function bosMesaj() {
-    if (C.ad === "nba") {
-      if (!ODDS_API || !ODDS_API.aktif) return "NBA maçları için The Odds API anahtarı gerekiyor. Anahtar eklenince maçlar ve oranlar her gün alınır.";
-      if (gorunum === "g") return "Önümüzdeki 48 saatte oranı alınmış NBA maçı yok. Oranlar günde bir kez alınır.";
-      return C.TUM.length ? "Seçili tarih aralığında maç yok." : "Henüz sonucu kaydedilmiş NBA maçı yok. Oynanan maçlar her gün eklenecek.";
-    }
-    if (gorunum === "g") return C.FIK.some(m => m.gun >= bugun) ? "Seçili tarih aralığında oranı açıklanmış maç yok." :
-      "Şu an oranı açıklanmış gelecek maç yok. football-data.co.uk hafta sonu maçlarını Cuma, hafta içi maçlarını Salı öğleden sonra yayınlıyor; kupalar ve ek ligler The Odds API'den günde bir kez gelir.";
-    return "Seçili tarih aralığında maç yok.";
-  }
   function ciz() {
-    const lig = $("f-lig").value, ara = $("f-ara").value.trim().toLocaleLowerCase("tr");
-    let liste = VIEW.filter(f => (!lig || f.lig === lig) && (!ara || (f.ev + " " + f.dep).toLocaleLowerCase("tr").includes(ara)));
-    const sp = seciliPazar(), ihtimalSira = F.sira === "ihtimal" && sp, min = sp && F.min ? Number(F.min) : 0;
-    if (sp && (ihtimalSira || min)) {
-      liste = liste.map(f => ({ f, p: ihtimal(f, sp) })).filter(x => x.p != null && x.p >= min);
-      if (ihtimalSira) liste.sort((a, b) => b.p - a.p);
-      liste = liste.map(x => x.f);
-    }
-    if (!ihtimalSira) liste = liste.slice().sort((a, b) => b.gun === a.gun ? a.saat.localeCompare(b.saat) || a.lig.localeCompare(b.lig) : (gorunum === "p" ? b.gun - a.gun : a.gun - b.gun));
+    const lig = $("f-lig").value, ara = $("f-ara").value.trim().toLocaleLowerCase("tr"), sadece = $("f-sinyal").checked;
+    let liste = VIEW.filter(v => (!lig || v.t.lig === lig) && (!ara || (v.t.ev + " " + v.t.dep).toLocaleLowerCase("tr").includes(ara)) &&
+      (!sadece || v.pazar.some(p => p.sinyal)));
+    const ihtimal = F.sira === "ihtimal" && F.pazar;
+    if (ihtimal) { const k = PZ[F.pazar].i; liste = liste.slice().sort((a, b) => (b.pazar[k].tah ?? -1) - (a.pazar[k].tah ?? -1)); }
+    else liste = liste.slice().sort((a, b) => b.t.gun === a.t.gun ? a.t.saat.localeCompare(b.t.saat) || a.t.lig.localeCompare(b.t.lig) : (gorunum === "p" ? b.t.gun - a.t.gun : a.t.gun - b.t.gun));
     const kap = $("fixtures"); kap.textContent = "";
     $("f-count").textContent = binlik(liste.length) + " / " + binlik(VIEW.length) + " maç";
-    if (!VIEW.length) { kap.append(el("div", "empty", bosMesaj())); return; }
+    if (!TUM.length) { kap.append(el("div", "empty", "Veri yüklenemedi. Güncelle tuşuna basın.")); return; }
+    if (!VIEW.length) {
+      kap.append(el("div", "empty", gorunum === "g"
+        ? (FIK.some(m => m.gun >= bugun) ? "Seçili tarih aralığında oranı açıklanmış maç yok." :
+          "Şu an oranı açıklanmış gelecek maç yok. football-data.co.uk hafta sonu maçlarını Cuma, hafta içi maçlarını Salı öğleden sonra yayınlıyor; sayfa bunları otomatik alır. Bu arada Geçmiş maçlar sekmesine bakabilirsiniz.")
+        : "Seçili tarih aralığında maç yok.")); return;
+    }
     if (!liste.length) { kap.append(el("div", "empty", "Bu filtreyle maç yok.")); return; }
     const MAX = 400; const gos = liste.slice(0, MAX);
-    if (ihtimalSira) { const l = el("div", "list"); gos.forEach(f => l.append(fxSatir(f, true))); kap.append(l); }
+    if (ihtimal) { const l = el("div", "list"); gos.forEach(v => l.append(fxSatir(v, true))); kap.append(l); }
     else {
       let gun = null, lst = null;
-      gos.forEach(f => {
-        if (f.gun !== gun) { gun = f.gun; const d = el("div", "day"); d.append(el("h3", null, uzunTarih(gun))); lst = el("div", "list"); d.append(lst); kap.append(d); }
-        lst.append(fxSatir(f, false));
+      gos.forEach(v => {
+        if (v.t.gun !== gun) { gun = v.t.gun; const d = el("div", "day"); d.append(el("h3", null, uzunTarih(gun))); lst = el("div", "list"); d.append(lst); kap.append(d); }
+        lst.append(fxSatir(v, false));
       });
     }
     if (liste.length > MAX) kap.append(el("div", "empty", "İlk " + MAX + " maç gösteriliyor. Tarih aralığını daraltın ya da lig seçin."));
   }
 
-  // ================================================================ hesaplayıcı
-  const hesapDurum = { oranlarim: {} };
-  function hesapCiz() {
-    const kap = $("hes-sonuc"); kap.textContent = "";
-    const v = id => oranOku($(id).value);
-    const o1 = v("h-1"), ox = v("h-x"), o2 = v("h-2"), ou = v("h-u"), oa = v("h-a");
-    if (!KAT) { kap.append(el("div", "empty", "Model katsayıları yüklenemedi.")); return; }
-    if (!(o1 && ox && o2)) { kap.append(el("div", "empty", "MS 1, X ve 2 oranlarını yaz (1'den büyük sayılar). Örnek: 1,85 · 3,60 · 4,20")); return; }
-    const iki = ou && oa;
-    const f = { lig: "HES", ev: "Ev sahibi", dep: "Deplasman", gun: bugun, saat: "", o1, ox, o2, ou: iki ? ou : null, oa: iki ? oa : null, ms: null, iy: null, korner: null, kart: null, ok: 0, oz: null, lh: null, la: null, mc: null, mk: null };
-    const ozel = { o1, ox, o2, ou: f.ou, oa: f.oa };
-    const ozet = el("div", "muted", ozetSatiri(f, ozel)); ozet.textContent = ozet.textContent.replace(" · Model:", " · Model:") ;
-    kap.append(ozet);
-    if (!iki) kap.append(el("div", "muted", "2,5 Alt/Üst oranları yazılmadığı için toplam gol seviyesi tahmin edildi; yazarsan sonuçlar daha doğru olur."));
-    const ara = el("div", "tablo-ara"), ai = el("input"); ai.type = "search"; ai.placeholder = "Pazar ara (ör. KG, handikap, 2,5)"; ai.setAttribute("aria-label", "Pazar ara"); ara.append(ai); kap.append(ara);
-    const sc = el("div", "scroll"); sc.append(pazarTablosu(f, ozel, hesapDurum.oranlarim)); kap.append(sc);
-    ai.addEventListener("input", () => tabloFiltre(sc.firstChild, ai.value));
-    kap.append(el("div", "muted", "Hesaplayıcıda korner ve kart yoktur (takım bilgisi gerekir). Bu pazarlar için maç listesinden maçı aç."));
+  // ---------------------------------------------------------------- backtest
+  let btNo = 0;
+  function btBaslat() {
+    const no = ++btNo; $("bt-lead").textContent = "Backtest hesaplanıyor…";
+    setTimeout(() => { if (no !== btNo || !TUM.length) return; btCiz(backtest(A)); }, 60);
   }
-  ["h-1", "h-x", "h-2", "h-u", "h-a"].forEach(id => $(id).addEventListener("input", () => { hesapDurum.oranlarim = {}; hesapCiz(); }));
-
-  // ================================================================ geçmişte nasıl çalıştı
-  // Araştırma sonuçları (python: arastirma/degerlendir3.py). Log kayıp: küçük = iyi.
-  const ARASTIRMA = {
-    gruplar: [["Maç sonucu", 6, 0.6252, 0.5989, 0.5846], ["Toplam gol", 8, 0.5604, 0.5601, 0.5491], ["Karşılıklı gol", 2, 0.6904, 0.6945, 0.6862],
-      ["Takım golü", 10, 0.5828, 0.5640, 0.5524], ["İlk yarı", 8, 0.6089, 0.6073, 0.5976], ["İkinci yarı", 2, 0.6029, 0.6068, 0.5975],
-      ["Korner", 8, 0.6515, 0.6564, 0.6465], ["Kart", 7, 0.6156, 0.6177, 0.6066]],
-    toplam: [51, 0.6087, 0.6029, 0.5920]
-  };
-  function arastirmaCiz() {
-    const k = $("arastirma"); k.textContent = "";
-    k.append(el("p", "lead", "Geriye dönük test: Temmuz 2024 – Eylül 2026 arasında oynanan 15.406 maç (22 Avrupa ligi). Model her test döneminde yalnızca o tarihten ÖNCEKİ veriyle (Temmuz 2023'ten itibaren) eğitildi; her maç yalnızca kendi oranlarıyla tahmin edildi. " +
-      "Aşağıdaki sayılar ortalama log kayıptır (küçük = tahminler gerçeğe daha yakın). Karşılaştırma: lig ortalamasını her maça aynen veren basit tahmin ve sayfanın eski \"benzer oranlı maç\" yöntemi."));
-    const sc = el("div", "bt-wrap scroll"), t = el("table"); sc.append(t); k.append(sc);
-    const h = t.createTHead().insertRow(); ["Pazar grubu", "Pazar", "Lig ortalaması", "Eski yöntem", "Yeni model"].forEach((x, i) => h.append(el("th", i ? "n" : null, x)));
-    const b = t.createTBody();
-    ARASTIRMA.gruplar.concat([["Hepsi"].concat(ARASTIRMA.toplam)]).forEach(r => {
-      const tr = b.insertRow(); if (r[0] === "Hepsi") tr.className = "toplam";
-      tr.insertCell().textContent = r[0];
-      const en = Math.min(r[2], r[3], r[4]);
-      [String(r[1]), ...[r[2], r[3], r[4]].map(x => x.toFixed(4).replace(".", ","))].forEach((x, i) => { const c = tr.insertCell(); c.className = "n" + (i && Number(String(x).replace(",", ".")) === en ? " good" : ""); c.textContent = x; });
+  function btCiz(B) {
+    const sat = B.satirlar.filter(r => r.sinyal > 0);
+    const top = sat.reduce((a, r) => (a.s += r.sinyal, a.t += r.tuttu, a.n += r.normal * r.sinyal, a), { s: 0, t: 0, n: 0 });
+    const or = sat.filter(r => r.oranli > 0);
+    const kar = or.reduce((a, r) => a + r.kar, 0), oranliN = or.reduce((a, r) => a + r.oranli, 0);
+    $("bt-lead").textContent = top.s
+      ? kisaTarih(B.baslangic) + " sonrasındaki " + binlik(B.testMac) + " maçta, her maç sadece kendinden önce oynanmış maçlarla analiz edildi. " +
+        "Toplam " + binlik(top.s) + " sinyal çıktı; tutma oranı " + yuzde(top.t / top.s) + ". Aynı pazarların, sinyali üreten maçlar dışındaki benzer oranlı maçlardaki normal tutma oranı ise " + yuzde(top.n / top.s) + ". " +
+        (oranliN ? "Bet365 oranı bilinen pazarlarda (MS ve 2,5 Alt/Üst) her sinyale 1 birim konsaydı sonuç " + (kar >= 0 ? "+" : "") + virgul(kar) + " birim olurdu (" + binlik(oranliN) + " sinyal)." : "")
+      : "Bu ayarlarla geçmişte sinyal çıkmadı.";
+    const bt = $("bt-table"); bt.textContent = "";
+    const bh = bt.createTHead().insertRow();
+    ["Pazar", "Sinyal", "Tuttu", "Tutma", "Grubun normali", "Fark", "Tüm maçlarda", "Piyasa ihtimali", "Kâr/zarar (birim)"].forEach((x, i) => bh.append(el("th", i ? "n" : null, x)));
+    const bb = bt.createTBody();
+    sat.sort((a, b) => b.sinyal - a.sinyal).forEach(r => {
+      const tr = bb.insertRow(); tr.insertCell().textContent = PZ[r.kod].label;
+      const add = (t, cls) => { const c = tr.insertCell(); c.className = "n" + (cls ? " " + cls : ""); c.textContent = t; };
+      add(binlik(r.sinyal)); add(binlik(r.tuttu)); add(yuzde(r.oran)); add(yuzde(r.normal));
+      const fark = r.oran - r.normal; add((fark >= 0 ? "+" : "") + Math.round(fark * 100) + " puan", fark > 0.02 ? "good" : fark < -0.02 ? "bad" : "");
+      add(yuzde(r.genel)); add(r.piyasa == null ? "–" : yuzde(r.piyasa));
+      add(r.kar == null ? "–" : (r.kar >= 0 ? "+" : "") + virgul(r.kar), r.kar == null ? "" : r.kar > 0 ? "good" : "bad");
     });
-    const ul = el("ul", "bulgu");
-    [
-      "Yeni model 51 pazarın 51'inde hem eski yöntemden hem de lig ortalamasından daha doğru çıktı. Eski yöntem 51 pazarın yalnızca 20'sinde lig ortalamasını geçebildi.",
-      "Eski yöntemin \"sinyal\" verdiği 25.586 maç-pazar çiftinin %78,2'si tuttu; eski yöntem %80,5 bekliyordu. Yeni modelin aynı çiftler için ortalama ihtimali %77,5: yani sinyaller, oranların zaten söylediğinin üstüne yalnızca 0,7 puanlık bir şey ekliyor; eski yöntemin vaat ettiği kadar değil.",
-      "Para tarafı: MS ve 2,5 Alt/Üst pazarlarındaki sinyalli bahislere (Bet365 oranıyla, 581 bahis) 1 birim oynansaydı toplam getiri −%5,2 (±6,2) olurdu. Test döneminde tüm maçlara düz oynanan MS 1 −%7,8, MS X −%5,3, MS 2 −%11,4, 2,5 Üst −%4,1, 2,5 Alt −%7,2 getirdi (en yüksek oran seçilse bile −%1 ile −%7).",
-      "Birleşik ve ek pazarlarda (62 pazar: handikap, İY/MS, MS + Alt/Üst, KG + Alt/Üst, toplam gol aralığı) modelin ihtimali ile gerçekleşen oran arasındaki ortalama fark 0,5 puan, en büyük fark 1,5 puan (handikap pazarları) çıktı. Tek/çift için model bilgi eklemediğinden %50 gösterilir."
-    ].forEach(x => ul.append(el("li", null, x)));
-    k.append(ul);
-  }
-
-  // ---------------------------------------------------------------- canlı kontrol (sayfadaki geçmiş maçlarla)
-  const KAL_TEMEL = () => C.ad === "futbol" ? C.PAZARLAR.slice(0, PAZ.TEMEL_SAYI) : C.PAZARLAR;
-  const kalGrupAdi = a => a === "Ev sahibi golü" || a === "Deplasman golü" ? "Takım golü" : a;
-  function kalGrupDoldur() {
-    const s = $("k-grup"), onceki = s.value; s.textContent = "";
-    s.append(new Option("Hepsi", "tum"));
-    [...new Set(KAL_TEMEL().map(p => kalGrupAdi(p[2])))].forEach(a => s.append(new Option(a, a)));
-    s.value = [...s.options].some(o => o.value === onceki) ? onceki : "tum";
-  }
-  let kalNo = 0;
-  function kalBaslat() {
-    const no = ++kalNo, S = C, tab = $("kal-table"); tab.textContent = "";
-    $("kal-lead").textContent = "Hesaplanıyor…";
-    setTimeout(async () => {
-      if (no !== kalNo) return;
-      const grup = $("k-grup").value, donem = $("k-donem").value;
-      const bas = donem === "12ay" ? bugun - 365 : -Infinity;
-      const secili = KAL_TEMEL().filter(p => grup === "tum" || kalGrupAdi(p[2]) === grup);
-      const maclar = S.TUM.filter(m => m.gun >= bas && m.ms && (S.ad === "nba" || m.lh != null) && KAT);
-      if (!maclar.length) { $("kal-lead").textContent = "Bu dönemde kontrol edilecek geçmiş maç yok."; return; }
-      const kutu = Array.from({ length: 10 }, () => ({ n: 0, p: 0, y: 0 }));
-      for (let j = 0; j < maclar.length; j++) {
-        if (j % 300 === 0) { await bekle(); if (no !== kalNo) return; $("kal-lead").textContent = "Hesaplanıyor… %" + Math.round(j / maclar.length * 100); }
-        const m = maclar[j];
-        const P = S.ad === "nba" ? BOM.nbaPazarlar(m) : BOM.temelPazarlar(m.lh, m.la, KAT, m.mc, m.mk);
-        for (const pz of secili) {
-          const r = sonucu(pz, m), p = P[pz[0]]; if (r == null || p == null) continue;
-          const k = kutu[Math.min(9, Math.floor(p * 10))]; k.n++; k.p += p; if (r) k.y++;
-        }
-      }
-      if (no !== kalNo) return;
-      kalCiz(kutu, maclar.length, donem);
-    }, 40);
-  }
-  function kalCiz(kutu, nMac, donem) {
-    const tab = $("kal-table"); tab.textContent = "";
-    const top = kutu.reduce((a, k) => (a.n += k.n, a.p += k.p, a.y += k.y, a), { n: 0, p: 0, y: 0 });
-    if (!top.n) { $("kal-lead").textContent = "Bu seçim için sonuçlanmış pazar yok."; return; }
-    let sapma = 0; kutu.forEach(k => { if (k.n) sapma += Math.abs(k.y / k.n - k.p / k.n) * k.n; });
-    $("kal-lead").textContent = (donem === "12ay" ? "Son 12 ayda" : "Sayfadaki tüm geçmişte (" + kisaTarih(C.ILK_GUN) + " sonrası)") + " oynanan " + binlik(nMac) + " maçta, modelin her pazar için maçtan önce verdiği ihtimaller gruplandı. Model ortalaması %" +
-      ondalik(top.p / top.n * 100, 1) + ", gerçekleşen %" + ondalik(top.y / top.n * 100, 1) + "; ağırlıklı ortalama sapma " + ondalik(sapma / top.n * 100, 1) + " puan. İdeal durumda her satırda iki yüzde birbirine eşittir." +
-      (C.ad === "futbol" ? " (Korner ve kart modelinin katsayıları da bu verilerle eğitildiği için o gruplarda sonuç biraz iyimser olabilir.)" : "");
-    const h = tab.createTHead().insertRow(); ["Modelin ihtimali", "Pazar sayısı", "Model ortalaması", "Gerçekleşen", "Fark"].forEach((x, i) => h.append(el("th", i ? "n" : null, x)));
-    const b = tab.createTBody();
-    kutu.forEach((k, i) => {
-      if (!k.n) return;
-      const tr = b.insertRow(); tr.insertCell().textContent = "%" + i * 10 + " – %" + (i + 1) * 10;
-      const fk = (k.y - k.p) / k.n * 100, se = Math.sqrt(Math.max(k.p / k.n * (1 - k.p / k.n), 1e-9) / k.n) * 100;
-      [binlik(k.n), yuzde1(k.p / k.n), yuzde1(k.y / k.n), (fk >= 0 ? "+" : "−") + ondalik(Math.abs(fk), 1) + " puan"].forEach((x, j) => {
-        const c = tr.insertCell(); c.className = "n" + (j === 3 ? (Math.abs(fk) > 2.5 * se && Math.abs(fk) > 1 ? " bad" : "") : ""); c.textContent = x;
-      });
+    const lt = $("bt-lig"); lt.textContent = "";
+    const lh = lt.createTHead().insertRow();
+    ["Lig", "Sinyal", "Tuttu", "Tutma", "Grubun normali"].forEach((x, i) => lh.append(el("th", i ? "n" : null, x)));
+    const lb = lt.createTBody();
+    B.ligler.slice().sort((a, b) => b.sinyal - a.sinyal).forEach(r => {
+      const tr = lb.insertRow(); tr.insertCell().textContent = LIGLER[r.lig] || r.lig;
+      [binlik(r.sinyal), binlik(r.tuttu), yuzde(r.oran), yuzde(r.normal)].forEach(t => { const c = tr.insertCell(); c.className = "n"; c.textContent = t; });
     });
   }
-  $("k-grup").addEventListener("change", kalBaslat);
-  $("k-donem").addEventListener("change", kalBaslat);
 
-  // ================================================================ üst bilgi + güncelleme
+  // ---------------------------------------------------------------- üst bilgi + güncelleme
   function metaCiz() {
     const meta = $("meta"); meta.textContent = "";
-    const fs = C.FIK.filter(m => m.gun >= bugun).length;
-    const kaynak = C.ad === "nba" ? "The Odds API" : "football-data.co.uk" + (ODDS_API && ODDS_API.aktif ? " + The Odds API" : "");
-    const satir = [["Kaynak", kaynak], ["Geçmiş", binlik(C.TUM.length) + " maç"], ["Aralık", C.TUM.length ? kisaTarih(C.ILK_GUN) + " – " + kisaTarih(C.SON_GUN) : "–"], ["Gelecek", fs + " maç"],
-      ["Model", C.ad === "nba" ? "normal dağılım (oranlardan)" : "Poisson / Dixon-Coles (oranlardan)"]];
-    if (C.GECICI_SAY) satir.push(["Geçici sonuç", C.GECICI_SAY + " maç"]);
-    if (ODDS_API && ODDS_API.aktif && ODDS_API.kalan != null) satir.push(["The Odds API kalan kredi", String(ODDS_API.kalan)]);
-    if (ODDS_API && ODDS_API.hata) satir.push(["The Odds API", "hata: " + ODDS_API.hata]);
-    satir.forEach(([k, v]) => { const s = el("span"); s.append(k + ": ", el("b", null, v)); meta.append(s); });
+    const fs = FIK.filter(m => m.gun >= bugun).length;
+    [["Kaynak", "football-data.co.uk"], ["Geçmiş", binlik(TUM.length) + " maç"], ["Aralık", TUM.length ? kisaTarih(ILK_GUN) + " – " + kisaTarih(SON_GUN) : "–"],
+     ["Gelecek", fs + " maç"]].forEach(([k, v]) => { const s = el("span"); s.append(k + ": ", el("b", null, v)); meta.append(s); });
+    $("n-p").textContent = "";
     $("upd-durum").textContent = OLUSTURMA ? "Veri: " + new Date(OLUSTURMA).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
   }
   const gomulu = document.getElementById("gomulu-veri");
@@ -1203,32 +629,28 @@ if (typeof module !== "undefined" && module.exports) module.exports = PAZ;
         if (!r.ok) throw new Error("HTTP " + r.status);
         V = await r.json();
       }
-      veriAc(V);
-      if (ilk) { sporSec(C.ad, true); gorunum = C.FIK.some(m => m.gun >= bugun) || !C.TUM.length ? "g" : "p"; sekmeIsaretle(); hizliDoldur(); }
-      else { metaCiz(); if ($("f-hizli").value !== "ozel") hizliUygula($("f-hizli").value); }
-      if (gorunum === "h") hesapCiz(); else listeHazirla();
-      kalBaslat();
+      veriAc(V); onbellek.clear(); metaCiz();
+      if (ilk && !FIK.some(m => m.gun >= bugun)) { gorunum = "p"; $("tab-g").setAttribute("aria-selected", "false"); $("tab-p").setAttribute("aria-selected", "true"); }
+      if (ilk) hizliDoldur(); else if ($("f-hizli").value !== "ozel") hizliUygula($("f-hizli").value);
+      listeHazirla(); btBaslat();
       if (!ilk) $("upd-durum").textContent += " · güncellendi";
     } catch (e) {
       metaCiz();
       $("upd-durum").textContent = gomulu
         ? "Bu önizlemede güncelleme yok; GitHub sayfanızda Güncelle tuşu son veriyi getirir."
         : "Güncellenemedi (" + (e && e.message || e) + "). İnternet bağlantınızı kontrol edin.";
-      if (!C.TUM.length) ciz();
+      if (!TUM.length) ciz();
     } finally { btn.disabled = false; }
   }
   $("guncelle").addEventListener("click", () => guncelle(false));
 
   [
-    "Adil oran*: Modelin hesapladığı ihtimalin tersidir (1 ÷ ihtimal). Hiçbir bahis şirketinin oranı değildir. Bahis şirketlerinin oranları marj içerir; kendi oranını yazdığın pazarda \"değer\" artıysa o oran, modelin adil oranından yüksektir. Değer sütunu modelin doğruluğuna bağlıdır; model de en iyi ihtimalle piyasanın kendi bilgisi kadar doğrudur.",
-    "Model: marjı çıkarılmış 1X2 ve 2,5 Alt/Üst ihtimallerine uyan beklenen ev ve deplasman golü bulunur; skorlar Poisson dağılımı, düşük skorlar için Dixon-Coles düzeltmesi ve 2+ farklı skorlar için hafif bir ağırlıkla modellenir. İlk yarı için gollerin yaklaşık %44,5'inin ilk yarıda atıldığı varsayılır. Korner ve kart: negatif binom dağılımı; takımların son 20 maçtaki attığı/yediği korner ve kart sayıları, ligin son 400 maçtaki seviyesi ve beklenen gol kullanılır. Katsayılar 1 Temmuz 2023'ten sonraki verilerle eğitilmiştir.",
-    "Gerçek oranlar: ana Avrupa liglerinde Bet365 (football-data.co.uk); MLS, Brezilya ve İskandinav liglerinin geçmişinde kapanış oranları; kupalarda, NBA'de ve ek liglerin gelecek maçlarında bahis şirketlerinin ortalaması (The Odds API). Saatler Türkiye saatidir. Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner, kart ve ilk yarı verisi her ligde yok (MLS, Brezilya, İskandinav ligleri ve kupalarda korner/kart modeli yok).",
-    "NBA: maç sonucu ihtimali oranlardan, toplam sayı çizgiden hesaplanır; fark ve takım sayıları normal dağılımla modellenir (fark için standart sapma 13, toplam için 18 sayı). Çizgiye tam eşit sonuç iade sayılır ve \"iade hariç\" ihtimal gösterilir.",
-    "Bu sayfa istatistiksel bir araçtır, bahis tavsiyesi değildir. Eski sürüm: v1.html"
+    "Adil oran*: Motorun benzer oranlı geçmiş maçlardan hesapladığı ihtimalin karşılığıdır (1 ÷ ihtimal). Hiçbir bahis şirketinin oranı değildir. İddaa'daki oran bu adil orandan yüksekse, o pazar motorun tahminine göre değerli görünür; düşükse değil. Gerçek oran sadece MS 1/X/2 ve 2,5 Alt/Üst için var (Bet365).",
+    "Tahmini ihtimal: Toleransın iki katı genişlikteki tüm benzer maçlarda pazarın tutma oranı; az maç varsa ligin o tarihe kadarki ortalamasına doğru çekilir. \"Benzer maçlar\" sütunu ise en yakın maçlardaki sayıdır; sinyal buna göre verilir. Backtest, sinyallerin bu geniş gruptaki normalden fazla tutmadığını gösteriyor; tahmini ihtimal daha güvenilir ölçüdür.",
+    "Kart: sarı + kırmızı kart sayısı; İddaa'nın kart kuralları farklı olabilir. Korner ve kart verisi her ligde yok. Veri: football-data.co.uk, her 4 saatte bir otomatik güncellenir. Bu sayfa istatistiksel bir analizdir, bahis tavsiyesi değildir."
   ].forEach(t => $("foot").append(el("p", null, t)));
 
-  $("tab-h").hidden = C.ad === "nba";
-  pazarSecimi(); hizliDoldur(); arastirmaCiz(); kalGrupDoldur();
+  hizliDoldur();
   guncelle(true);
 })();
 </script>
