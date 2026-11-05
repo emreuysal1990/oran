@@ -9,21 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Hafta sonu oranları (The Odds API)
-        env:
-          KEY: ${{ secrets.THE_ODDS_API_KEY }}
+      - name: football-data dosyalarını indir
         run: |
-          mkdir -p oranlar
-          if [ -z "$KEY" ]; then echo "anahtar yok" > oranlar/DURUM.txt; exit 0; fi
-          echo "anahtar var" > oranlar/DURUM.txt
-          for s in soccer_epl soccer_efl_champ soccer_spain_la_liga soccer_germany_bundesliga soccer_italy_serie_a soccer_france_ligue_one soccer_turkey_super_league soccer_netherlands_eredivisie soccer_portugal_primeira_liga soccer_belgium_first_div soccer_germany_bundesliga2 soccer_italy_serie_b soccer_spain_segunda_division soccer_france_ligue_two soccer_spl soccer_greece_super_league soccer_brazil_campeonato soccer_argentina_primera_division; do
-            curl -sS -D oranlar/h_$s.txt -o oranlar/$s.json "https://api.the-odds-api.com/v4/sports/$s/odds/?apiKey=$KEY&regions=eu&markets=h2h,totals&oddsFormat=decimal&dateFormat=iso" || true
-            grep -i "x-requests-remaining\|x-requests-used\|HTTP/" oranlar/h_$s.txt >> oranlar/DURUM.txt || true
-            rm -f oranlar/h_$s.txt
-          done
-          ls -la oranlar
+          mkdir -p onbellek
+          K=https://www.football-data.co.uk
+          curl -sSfL --retry 3 -A "Mozilla/5.0" -o onbellek/2627.zip $K/mmz4281/2627/data.zip
+          curl -sSfL --retry 3 -A "Mozilla/5.0" -o onbellek/fixtures.csv $K/fixtures.csv || true
+          curl -sSfL --retry 3 -A "Mozilla/5.0" -o onbellek/ek_fixtures.csv $K/new_league_fixtures.csv || true
+          ls -la onbellek
       - name: Dala kaydet
         run: |
-          git add oranlar
-          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Geçici oranlar" || exit 0
+          git add onbellek
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Geçici veri" || exit 0
           git push -q origin HEAD:gecici-veri
